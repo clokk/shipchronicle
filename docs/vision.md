@@ -619,6 +619,25 @@ Synced to: shipchronicle.com/studio/myproject
   - Code-on-demand drawer
   - Comparison view
 
+**Agent Trace Integration:**
+
+Consider supporting the [Agent Trace](https://agent-trace.dev/) open standard being developed by Cursor and industry partners (Anthropic, Google, Vercel, Cloudflare, etc.). Agent Trace is a vendor-neutral format for recording AI code attribution at the line level.
+
+| Agent Trace | Shipchronicle |
+|-------------|---------------|
+| Line-level attribution | Full conversation chronicle |
+| "Which code came from AI?" | "How did this get built?" |
+| Metadata in codebase | Standalone viewer |
+| Provenance & auditing | Portfolios & learning |
+
+**Potential integration points:**
+- **Export**: Generate `.agent-trace.json` from cognitive commits, linking turns to file changes
+- **Import**: Enrich chronicles with line-level attribution data from Agent Trace files
+- **Serve as context URL**: Agent Trace links to conversation URLs — Shipchronicle could be that destination
+- **Bidirectional linking**: Chronicle shows "view attribution" → Agent Trace shows "view full conversation"
+
+This positions Shipchronicle as the narrative layer complementing Agent Trace's attribution layer.
+
 ### Immediate Next Step
 
 **Build the parser.** Locate a JSONL from a recent session, write a script to extract `{ Prompt, ToolCalls, Timestamp }`. Once proven, add the watch daemon.
