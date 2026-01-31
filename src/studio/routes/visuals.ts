@@ -5,7 +5,7 @@
 import { Hono } from "hono";
 import * as fs from "fs";
 import * as path from "path";
-import { ShipchronicleDB } from "../../storage/db";
+import { AgentlogsDB } from "../../storage/db";
 
 interface VisualRouteOptions {
   global?: boolean;
@@ -18,7 +18,7 @@ export function createVisualRoutes(projectPath: string, options: VisualRouteOpti
   // GET /api/visuals/:id/image - Serve screenshot file
   app.get("/:id/image", async (c) => {
     const id = c.req.param("id");
-    const db = new ShipchronicleDB(projectPath, dbOptions);
+    const db = new AgentlogsDB(projectPath, dbOptions);
 
     try {
       const visual = db.getVisual(id);
@@ -56,7 +56,7 @@ export function createVisualRoutes(projectPath: string, options: VisualRouteOpti
   // GET /api/visuals/:id - Get visual metadata
   app.get("/:id", async (c) => {
     const id = c.req.param("id");
-    const db = new ShipchronicleDB(projectPath, dbOptions);
+    const db = new AgentlogsDB(projectPath, dbOptions);
 
     try {
       const visual = db.getVisual(id);
@@ -75,7 +75,7 @@ export function createVisualRoutes(projectPath: string, options: VisualRouteOpti
     const id = c.req.param("id");
     const body = await c.req.json<{ caption?: string }>();
 
-    const db = new ShipchronicleDB(projectPath, dbOptions);
+    const db = new AgentlogsDB(projectPath, dbOptions);
 
     try {
       const visual = db.getVisual(id);
@@ -98,7 +98,7 @@ export function createVisualRoutes(projectPath: string, options: VisualRouteOpti
   // DELETE /api/visuals/:id - Delete visual
   app.delete("/:id", async (c) => {
     const id = c.req.param("id");
-    const db = new ShipchronicleDB(projectPath, dbOptions);
+    const db = new AgentlogsDB(projectPath, dbOptions);
 
     try {
       const visual = db.getVisual(id);

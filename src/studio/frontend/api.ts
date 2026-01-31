@@ -1,5 +1,5 @@
 /**
- * API client for Shipchronicle Studio
+ * API client for Agentlogs Studio
  */
 
 const API_BASE = "/api";

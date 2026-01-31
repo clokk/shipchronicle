@@ -1,8 +1,8 @@
-# Shipchronicle
+# Agentlogs
 
-> The chronicle of shipping. Explore how products evolve through human-AI collaboration.
+> A repository for your agent conversations.
 
-Parse Claude Code session logs to extract **Cognitive Commits** - the work that happens between git commits, including the conversation that shaped it.
+Parse Claude Code session logs to extract **Cognitive Commits** — the work that happens between git commits, including the conversation that shaped it.
 
 ## Installation
 
@@ -16,10 +16,10 @@ npm run build:studio  # Build the web UI
 
 ```bash
 # Import all your Claude Code history
-shipchronicle import
+agentlogs import
 
 # Open the studio to browse conversations
-shipchronicle studio
+agentlogs studio
 ```
 
 That's it! No setup required. Global mode is now the default.
@@ -29,13 +29,13 @@ That's it! No setup required. Global mode is now the default.
 ```bash
 # Initialize for project-specific mode (needed for daemon/capture)
 cd your-project
-shipchronicle init
+agentlogs init
 
 # Import only this project
-shipchronicle import --project
+agentlogs import --project
 
 # View only this project
-shipchronicle studio --project
+agentlogs studio --project
 ```
 
 ## Global Mode (Default)
@@ -53,13 +53,13 @@ Global mode is the default. It lets you explore your entire Claude Code history 
 
 ```bash
 # Import all Claude Code projects (default behavior)
-shipchronicle import
+agentlogs import
 
 # Re-import with fresh data (clears existing)
-shipchronicle import --clear
+agentlogs import --clear
 
 # Open the studio (global view is default)
-shipchronicle studio
+agentlogs studio
 ```
 
 ### How It Works
@@ -67,7 +67,7 @@ shipchronicle studio
 1. Discovers all Claude Code projects in `~/.claude/projects/`
 2. Parses session files from each project
 3. Tags each cognitive commit with its source project name
-4. Stores everything in a unified database at `~/.shipchronicle/global/`
+4. Stores everything in a unified database at `~/.agentlogs/global/`
 
 ## Commands
 
@@ -75,32 +75,32 @@ shipchronicle studio
 
 ```bash
 # Start the web-based curation studio (global view, default)
-shipchronicle studio                 # Opens http://localhost:4747
+agentlogs studio                 # Opens http://localhost:4747
 
 # View only current project (requires init)
-shipchronicle studio --project
+agentlogs studio --project
 
 # Custom port
-shipchronicle studio --port 3000
+agentlogs studio --port 3000
 
 # Don't auto-open browser
-shipchronicle studio --no-open
+agentlogs studio --no-open
 ```
 
 ### Import Sessions
 
 ```bash
 # Import all Claude Code projects (default)
-shipchronicle import
+agentlogs import
 
 # Import only current project (requires init)
-shipchronicle import --project
+agentlogs import --project
 
 # Clear existing data before importing
-shipchronicle import --clear
+agentlogs import --clear
 
 # Import from specific Claude project
-shipchronicle import --claude-path ~/.claude/projects/-Users-you-project
+agentlogs import --claude-path ~/.claude/projects/-Users-you-project
 ```
 
 ### Watch Daemon (Phase 2)
@@ -109,41 +109,41 @@ The daemon enables real-time capture of sessions and screenshots. Requires initi
 
 ```bash
 # Initialize for a project (required for daemon and --project mode)
-shipchronicle init
+agentlogs init
 
 # Start watching for Claude sessions (runs in background)
-shipchronicle watch
+agentlogs watch
 
 # Run in foreground with verbose output
-shipchronicle watch --foreground --verbose
+agentlogs watch --foreground --verbose
 
 # Check daemon status and statistics
-shipchronicle status
+agentlogs status
 
 # Stop the daemon
-shipchronicle stop
+agentlogs stop
 
 # Manually capture a screenshot
-shipchronicle capture
+agentlogs capture
 
 # Capture specific URL
-shipchronicle capture --url http://localhost:3000
+agentlogs capture --url http://localhost:3000
 ```
 
 ### Parser CLI (Phase 1)
 
 ```bash
 # List discovered Claude projects
-shipchronicle list
+agentlogs list
 
 # Parse a project
-shipchronicle parse ~/.claude/projects/-Users-you-YourProject/
+agentlogs parse ~/.claude/projects/-Users-you-YourProject/
 
 # Parse specific session
-shipchronicle parse <path> -s <session-id>
+agentlogs parse <path> -s <session-id>
 
 # Output formats: pretty (default), json, summary
-shipchronicle parse <path> -o json
+agentlogs parse <path> -o json
 ```
 
 ## What is a Cognitive Commit?
@@ -194,7 +194,7 @@ The web studio provides a split-view interface:
 
 ```
 ╔════════════════════════════════════════════════════════════╗
-║  SHIPCHRONICLE: myproject                                  ║
+║  AGENTLOGS: myproject                                      ║
 ╚════════════════════════════════════════════════════════════╝
 
 📊 Summary
@@ -221,8 +221,8 @@ When the daemon is running, it:
 4. **Persists** cognitive commits to SQLite for later retrieval
 
 Data is stored in:
-- Project mode: `~/.shipchronicle/<project-hash>/`
-- Global mode: `~/.shipchronicle/global/`
+- Project mode: `~/.agentlogs/<project-hash>/`
+- Global mode: `~/.agentlogs/global/`
 
 Each contains:
 - `data.db` - SQLite database with commits, sessions, turns
@@ -241,7 +241,7 @@ The database uses migrations to evolve the schema:
 - **Phase 1:** Parser CLI ✓
 - **Phase 2:** Watch daemon + auto-capture screenshots ✓
 - **Phase 3:** Web studio for curation ✓
-- **Phase 4:** Public viewer at shipchronicle.com
+- **Phase 4:** Public viewer at agentlogs.dev
 
 See [docs/vision.md](docs/vision.md) for the full vision.
 

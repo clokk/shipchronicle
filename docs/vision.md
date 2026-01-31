@@ -1,4 +1,4 @@
-# Shipchronicle
+# Agentlogs
 
 > A repository for your agent conversations.
 
@@ -12,11 +12,11 @@ Git tracks *what* changed. Nothing tracks *how it got built*.
 
 ## The Solution
 
-Shipchronicle extracts your Claude Code conversations and stores them in a searchable repository, linked to the git commits they produced.
+Agentlogs extracts your Claude Code conversations and stores them in a searchable repository, linked to the git commits they produced.
 
 ```
-shipchronicle import    # Import all Claude Code history
-shipchronicle studio    # Browse your conversations
+agentlogs import    # Import all Claude Code history
+agentlogs studio    # Browse your conversations
 ```
 
 That's it. Parse, store, browse.
@@ -62,23 +62,23 @@ A cognitive commit closes when:
 └─────────────┘     └─────────────┘     └─────────────┘
 ```
 
-**Global mode (default):** All projects in one database at `~/.shipchronicle/`
+**Global mode (default):** All projects in one database at `~/.agentlogs/`
 
-**Project mode:** Scoped to single project at `.shipchronicle/`
+**Project mode:** Scoped to single project at `.agentlogs/`
 
 ## CLI
 
 ```bash
 # Import Claude Code history
-shipchronicle import             # All projects (global)
-shipchronicle import --project   # Current project only
+agentlogs import             # All projects (global)
+agentlogs import --project   # Current project only
 
 # Browse conversations
-shipchronicle studio             # Open web UI
+agentlogs studio             # Open web UI
 
 # Utilities
-shipchronicle list               # Show available projects
-shipchronicle status             # Show database stats
+agentlogs list               # Show available projects
+agentlogs status             # Show database stats
 ```
 
 ## What Gets Stored
@@ -160,8 +160,8 @@ Indices on: git hash, timestamps, project ID
 
 ## The Name
 
-**Shipchronicle** — the chronicle of shipping.
+**Agentlogs** — logs from your AI agents.
 
-- "Ship" is dev culture language
-- "Chronicle" implies structured historical record
-- Works as verb: "I shipchronicled that build"
+- Clear and descriptive
+- Developer-friendly (.dev domain)
+- Works as noun: "Check my agentlogs"

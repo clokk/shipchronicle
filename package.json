@@ -1,10 +1,10 @@
 {
-  "name": "shipchronicle",
+  "name": "agentlogs",
   "version": "0.1.0",
-  "description": "Chronicle of shipping: explore how products evolve through human-AI collaboration",
+  "description": "A repository for your agent conversations",
   "main": "dist/index.js",
   "bin": {
-    "shipchronicle": "./dist/index.js"
+    "agentlogs": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -16,9 +16,9 @@
   "keywords": [
     "claude",
     "ai",
-    "collaboration",
-    "git",
-    "chronicle"
+    "agent",
+    "logs",
+    "conversations"
   ],
   "author": "Connor Leisz",
   "license": "MIT",

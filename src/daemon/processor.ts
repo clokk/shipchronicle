@@ -1,5 +1,5 @@
 /**
- * Entry processor for Shipchronicle daemon
+ * Entry processor for Agentlogs daemon
  * Processes new log entries, detects commits, triggers captures
  */
 
@@ -27,9 +27,9 @@ import {
   extractEditFilePath,
   extractWriteFilePath,
 } from "../utils/git";
-import type { ShipchronicleDB } from "../storage/db";
+import type { AgentlogsDB } from "../storage/db";
 import type { ScreenshotCapturer } from "./capturer";
-import type { ShipchronicleConfig } from "../config";
+import type { AgentlogsConfig } from "../config";
 
 export interface ProcessorOptions {
   onCommitClosed?: (commit: CognitiveCommit) => void;
@@ -49,15 +49,15 @@ interface ProcessorState {
 }
 
 export class EntryProcessor {
-  private db: ShipchronicleDB;
+  private db: AgentlogsDB;
   private capturer: ScreenshotCapturer | null;
-  private config: ShipchronicleConfig;
+  private config: AgentlogsConfig;
   private options: ProcessorOptions;
   private state: ProcessorState;
 
   constructor(
-    db: ShipchronicleDB,
-    config: ShipchronicleConfig,
+    db: AgentlogsDB,
+    config: AgentlogsConfig,
     capturer: ScreenshotCapturer | null,
     options: ProcessorOptions = {}
   ) {

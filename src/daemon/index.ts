@@ -1,18 +1,18 @@
 /**
- * Shipchronicle Daemon
+ * Agentlogs Daemon
  * Main daemon module that orchestrates watching, processing, and capturing
  */
 
 import { SessionWatcher, createWatcher } from "./watcher";
 import { EntryProcessor } from "./processor";
 import { ScreenshotCapturer } from "./capturer";
-import { ShipchronicleDB } from "../storage/db";
+import { AgentlogsDB } from "../storage/db";
 import {
   loadConfig,
   writeDaemonPid,
   removeDaemonPid,
   isDaemonRunning,
-  type ShipchronicleConfig,
+  type AgentlogsConfig,
 } from "../config";
 import type { LogEntry } from "../parser/types";
 
@@ -21,9 +21,9 @@ export interface DaemonOptions {
   captureEnabled?: boolean;
 }
 
-export class ShipchronicleDaemon {
-  private config: ShipchronicleConfig;
-  private db: ShipchronicleDB;
+export class AgentlogsDaemon {
+  private config: AgentlogsConfig;
+  private db: AgentlogsDB;
   private watcher: SessionWatcher | null = null;
   private processor: EntryProcessor;
   private capturer: ScreenshotCapturer | null = null;
@@ -35,7 +35,7 @@ export class ShipchronicleDaemon {
     this.options = options;
 
     // Initialize storage
-    this.db = new ShipchronicleDB(this.config.projectPath);
+    this.db = new AgentlogsDB(this.config.projectPath);
 
     // Initialize capturer if enabled
     const captureEnabled =
@@ -193,7 +193,7 @@ export class ShipchronicleDaemon {
   /**
    * Get database instance (for CLI status commands)
    */
-  getDb(): ShipchronicleDB {
+  getDb(): AgentlogsDB {
     return this.db;
   }
 
@@ -222,7 +222,7 @@ export async function runDaemon(
   projectPath: string,
   options: DaemonOptions = {}
 ): Promise<void> {
-  const daemon = new ShipchronicleDaemon(projectPath, options);
+  const daemon = new AgentlogsDaemon(projectPath, options);
   await daemon.start();
 
   // Keep process alive

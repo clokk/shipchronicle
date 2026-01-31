@@ -1,5 +1,5 @@
 /**
- * SQLite database wrapper for Shipchronicle
+ * SQLite database wrapper for Agentlogs
  */
 
 import Database from "better-sqlite3";
@@ -21,7 +21,7 @@ export interface DBOptions {
   rawStoragePath?: boolean;
 }
 
-export class ShipchronicleDB {
+export class AgentlogsDB {
   private db: Database.Database;
   private projectPath: string;
 

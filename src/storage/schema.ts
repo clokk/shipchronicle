@@ -1,5 +1,5 @@
 /**
- * SQLite schema definitions for Shipchronicle
+ * SQLite schema definitions for Agentlogs
  */
 
 export const SCHEMA_VERSION = 3;

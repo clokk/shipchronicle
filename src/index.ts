@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Shipchronicle CLI
+ * Agentlogs CLI
  * Chronicle of shipping: explore how products evolve through human-AI collaboration
  */
 
@@ -23,8 +23,8 @@ import {
   discoverAllClaudeProjects,
   getProjectNameFromClaudePath,
 } from "./config";
-import { ShipchronicleDB } from "./storage/db";
-import { ShipchronicleDaemon } from "./daemon";
+import { AgentlogsDB } from "./storage/db";
+import { AgentlogsDaemon } from "./daemon";
 import { captureScreenshot } from "./daemon/capturer";
 import { getBestCaptureUrl } from "./utils/server-detect";
 import { startStudio } from "./studio";
@@ -32,7 +32,7 @@ import { startStudio } from "./studio";
 const program = new Command();
 
 program
-  .name("shipchronicle")
+  .name("agentlogs")
   .description("Chronicle of shipping: parse Claude Code session logs")
   .version("0.1.0");
 
@@ -172,7 +172,7 @@ function outputSummary(result: ParseResult): void {
 
 function outputPretty(result: ParseResult): void {
   console.log(`\n╔════════════════════════════════════════════════════════════╗`);
-  console.log(`║  SHIPCHRONICLE: ${result.project.padEnd(42)}║`);
+  console.log(`║  AGENTLOGS: ${result.project.padEnd(42)}║`);
   console.log(`╚════════════════════════════════════════════════════════════╝\n`);
 
   console.log(`📊 Summary`);
@@ -245,7 +245,7 @@ function formatTimestamp(iso: string): string {
 
 program
   .command("init")
-  .description("Initialize shipchronicle for this project")
+  .description("Initialize agentlogs for this project")
   .option("-n, --name <name>", "Project name (defaults to directory name)")
   .option("-c, --claude-path <path>", "Claude project path (auto-detected if not specified)")
   .option("-p, --port <port>", "Dev server port", parseInt)
@@ -281,8 +281,8 @@ program
         captureEnabled: options.capture !== false,
       });
 
-      console.log(`Initialized shipchronicle for: ${config.projectName}`);
-      console.log(`\nConfig created at: .shipchronicle/config.json`);
+      console.log(`Initialized agentlogs for: ${config.projectName}`);
+      console.log(`\nConfig created at: .agentlogs/config.json`);
       console.log(`\nSettings:`);
       console.log(`  Claude path: ${config.claudeProjectPath}`);
       console.log(`  Dev server port: ${config.devServerPort || "auto-detect"}`);
@@ -290,7 +290,7 @@ program
       console.log(`\nStorage directory: ${getStorageDir(projectPath)}`);
       console.log(`\nNext steps:`);
       console.log(`  1. Start your dev server`);
-      console.log(`  2. Run: shipchronicle watch`);
+      console.log(`  2. Run: agentlogs watch`);
     } catch (error) {
       console.error(`Error: ${(error as Error).message}`);
       process.exit(1);
@@ -309,14 +309,14 @@ program
       const projectPath = process.cwd();
 
       if (!isInitialized(projectPath)) {
-        console.error("Project not initialized. Run 'shipchronicle init' first.");
+        console.error("Project not initialized. Run 'agentlogs init' first.");
         process.exit(1);
       }
 
       if (isDaemonRunning(projectPath)) {
         const pid = readDaemonPid(projectPath);
         console.log(`Daemon already running (PID: ${pid})`);
-        console.log("Use 'shipchronicle stop' to stop it first.");
+        console.log("Use 'agentlogs stop' to stop it first.");
         process.exit(1);
       }
 
@@ -324,7 +324,7 @@ program
         // Run in foreground
         console.log("Starting daemon in foreground (Ctrl+C to stop)...\n");
 
-        const daemon = new ShipchronicleDaemon(projectPath, {
+        const daemon = new AgentlogsDaemon(projectPath, {
           verbose: options.verbose,
           captureEnabled: options.capture !== false,
         });
@@ -354,8 +354,8 @@ program
         child.unref();
 
         console.log(`Daemon started in background (PID: ${child.pid})`);
-        console.log("Use 'shipchronicle status' to check status");
-        console.log("Use 'shipchronicle stop' to stop the daemon");
+        console.log("Use 'agentlogs status' to check status");
+        console.log("Use 'agentlogs stop' to stop the daemon");
       }
     } catch (error) {
       console.error(`Error: ${(error as Error).message}`);
@@ -427,7 +427,7 @@ program
       const projectPath = process.cwd();
 
       if (!isInitialized(projectPath)) {
-        console.error("Project not initialized. Run 'shipchronicle init' first.");
+        console.error("Project not initialized. Run 'agentlogs init' first.");
         process.exit(1);
       }
 
@@ -435,7 +435,7 @@ program
       const running = isDaemonRunning(projectPath);
       const pid = readDaemonPid(projectPath);
 
-      console.log(`\nShipchronicle Status`);
+      console.log(`\nAgentlogs Status`);
       console.log(`${"─".repeat(40)}`);
       console.log(`Project: ${config.projectName}`);
       console.log(`Status: ${running ? "Running" : "Stopped"}`);
@@ -445,7 +445,7 @@ program
       }
 
       // Open DB to get stats
-      const db = new ShipchronicleDB(projectPath);
+      const db = new AgentlogsDB(projectPath);
       const commitCount = db.getCommitCount();
       const lastActivity = db.getLastActivity();
       db.close();
@@ -482,7 +482,7 @@ program
       const projectPath = process.cwd();
 
       if (!isInitialized(projectPath)) {
-        console.error("Project not initialized. Run 'shipchronicle init' first.");
+        console.error("Project not initialized. Run 'agentlogs init' first.");
         process.exit(1);
       }
 
@@ -520,7 +520,7 @@ program
 
       // If daemon is running and we have a current commit, attach the visual
       if (isDaemonRunning(projectPath)) {
-        const db = new ShipchronicleDB(projectPath);
+        const db = new AgentlogsDB(projectPath);
         const currentCommitId = db.getCurrentCommitId();
         if (currentCommitId) {
           db.createVisual(currentCommitId, "screenshot", outputPath, "Manual capture");
@@ -574,7 +574,7 @@ program
         const projectPath = process.cwd();
 
         if (!isInitialized(projectPath)) {
-          console.error("Project not initialized. Run 'shipchronicle init' first.");
+          console.error("Project not initialized. Run 'agentlogs init' first.");
           console.error("\nTip: Run without --project to see all your Claude history.");
           process.exit(1);
         }
@@ -614,7 +614,7 @@ program
         const projectPath = process.cwd();
 
         if (!isInitialized(projectPath)) {
-          console.error("Project not initialized. Run 'shipchronicle init' first.");
+          console.error("Project not initialized. Run 'agentlogs init' first.");
           console.error("\nTip: Run without --project to import all your Claude history.");
           process.exit(1);
         }
@@ -636,7 +636,7 @@ program
       }
 
       // Open database (global mode is default, project mode uses rawStoragePath: false)
-      const db = new ShipchronicleDB(storagePath, { rawStoragePath: !options.project });
+      const db = new AgentlogsDB(storagePath, { rawStoragePath: !options.project });
 
       // Optionally clear existing commits
       if (options.clear) {
@@ -704,9 +704,9 @@ program
       console.log();
 
       if (options.project) {
-        console.log("Import complete! Run 'shipchronicle studio --project' to view.");
+        console.log("Import complete! Run 'agentlogs studio --project' to view.");
       } else {
-        console.log("Import complete! Run 'shipchronicle studio' to view.");
+        console.log("Import complete! Run 'agentlogs studio' to view.");
       }
     } catch (error) {
       console.error(`Error: ${(error as Error).message}`);

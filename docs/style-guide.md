@@ -1,4 +1,4 @@
-# Shipchronicle Style Guide
+# Agentlogs Style Guide
 
 ## Design Philosophy
 

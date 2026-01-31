@@ -1,5 +1,5 @@
 /**
- * Hono server setup for Shipchronicle Studio
+ * Hono server setup for Agentlogs Studio
  */
 
 import { Hono } from "hono";
@@ -52,7 +52,7 @@ export function createApp(storagePath: string, options: ServerOptions = {}): Hon
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shipchronicle Studio</title>
+  <title>Agentlogs Studio</title>
   <style>
     body {
       font-family: system-ui, -apple-system, sans-serif;
@@ -81,7 +81,7 @@ export function createApp(storagePath: string, options: ServerOptions = {}): Hon
 </head>
 <body>
   <div class="container">
-    <h1>Shipchronicle Studio</h1>
+    <h1>Agentlogs Studio</h1>
     <p>Frontend not built. Run the build command first:</p>
     <code>npm run build:studio</code>
     <p>Or for development with hot reload:</p>

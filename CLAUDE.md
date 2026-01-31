@@ -1,4 +1,4 @@
-# Shipchronicle
+# Agentlogs
 
 Parses Claude Code session logs into **Cognitive Commits** — the unit of work between git commits, showing the conversation that shaped the code.
 
@@ -39,8 +39,8 @@ A cognitive commit closes when:
 
 ### Storage Paths
 
-- **Global mode**: `~/.shipchronicle/chronicle.db` — all projects in one DB
-- **Project mode**: `.shipchronicle/chronicle.db` — project-scoped (requires `init`)
+- **Global mode**: `~/.agentlogs/chronicle.db` — all projects in one DB
+- **Project mode**: `.agentlogs/chronicle.db` — project-scoped (requires `init`)
 
 ---
 

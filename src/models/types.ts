@@ -1,5 +1,5 @@
 /**
- * Output types for Shipchronicle
+ * Output types for Agentlogs
  * Represents the structured cognitive commit data
  */
 

@@ -1,13 +1,13 @@
 /**
- * Configuration management for Shipchronicle
- * Handles project-level config stored in .shipchronicle/config.json
+ * Configuration management for Agentlogs
+ * Handles project-level config stored in .agentlogs/config.json
  */
 
 import * as fs from "fs";
 import * as path from "path";
 import * as crypto from "crypto";
 
-export interface ShipchronicleConfig {
+export interface AgentlogsConfig {
   projectName: string;
   projectPath: string;
   claudeProjectPath: string;
@@ -16,12 +16,12 @@ export interface ShipchronicleConfig {
   storage: "local" | "cloud";
 }
 
-const CONFIG_DIR = ".shipchronicle";
+const CONFIG_DIR = ".agentlogs";
 const CONFIG_FILE = "config.json";
 const DAEMON_PID_FILE = "daemon.pid";
 
 /**
- * Get the .shipchronicle directory path for a project
+ * Get the .agentlogs directory path for a project
  */
 export function getConfigDir(projectPath: string): string {
   return path.join(projectPath, CONFIG_DIR);
@@ -51,17 +51,17 @@ export function isInitialized(projectPath: string): boolean {
 /**
  * Load config from project directory
  */
-export function loadConfig(projectPath: string): ShipchronicleConfig {
+export function loadConfig(projectPath: string): AgentlogsConfig {
   const configPath = getConfigPath(projectPath);
 
   if (!fs.existsSync(configPath)) {
     throw new Error(
-      `Project not initialized. Run 'shipchronicle init' first.`
+      `Project not initialized. Run 'agentlogs init' first.`
     );
   }
 
   const content = fs.readFileSync(configPath, "utf-8");
-  return JSON.parse(content) as ShipchronicleConfig;
+  return JSON.parse(content) as AgentlogsConfig;
 }
 
 /**
@@ -69,7 +69,7 @@ export function loadConfig(projectPath: string): ShipchronicleConfig {
  */
 export function saveConfig(
   projectPath: string,
-  config: ShipchronicleConfig
+  config: AgentlogsConfig
 ): void {
   const configDir = getConfigDir(projectPath);
   const configPath = getConfigPath(projectPath);
@@ -160,8 +160,8 @@ export function detectDevServerPort(projectPath: string): number | undefined {
  */
 export function initializeProject(
   projectPath: string,
-  options: Partial<ShipchronicleConfig> = {}
-): ShipchronicleConfig {
+  options: Partial<AgentlogsConfig> = {}
+): AgentlogsConfig {
   const resolvedPath = path.resolve(projectPath);
   const projectName = options.projectName || path.basename(resolvedPath);
   const claudeProjectPath =
@@ -173,7 +173,7 @@ export function initializeProject(
     );
   }
 
-  const config: ShipchronicleConfig = {
+  const config: AgentlogsConfig = {
     projectName,
     projectPath: resolvedPath,
     claudeProjectPath,
@@ -184,14 +184,14 @@ export function initializeProject(
 
   saveConfig(resolvedPath, config);
 
-  // Add .shipchronicle to .gitignore if not already
+  // Add .agentlogs to .gitignore if not already
   addToGitignore(resolvedPath);
 
   return config;
 }
 
 /**
- * Add .shipchronicle to .gitignore
+ * Add .agentlogs to .gitignore
  */
 function addToGitignore(projectPath: string): void {
   const gitignorePath = path.join(projectPath, ".gitignore");
@@ -203,7 +203,7 @@ function addToGitignore(projectPath: string): void {
   const content = fs.readFileSync(gitignorePath, "utf-8");
 
   if (!content.includes(CONFIG_DIR)) {
-    fs.appendFileSync(gitignorePath, `\n# Shipchronicle\n${CONFIG_DIR}/\n`);
+    fs.appendFileSync(gitignorePath, `\n# Agentlogs\n${CONFIG_DIR}/\n`);
   }
 }
 
@@ -218,7 +218,7 @@ export function getStorageDir(projectPath: string): string {
     .update(projectPath)
     .digest("hex")
     .substring(0, 12);
-  return path.join(home, ".shipchronicle", hash);
+  return path.join(home, ".agentlogs", hash);
 }
 
 /**
@@ -301,7 +301,7 @@ export function isDaemonRunning(projectPath: string): boolean {
  */
 export function getGlobalStorageDir(): string {
   const home = process.env.HOME || "";
-  return path.join(home, ".shipchronicle", "global");
+  return path.join(home, ".agentlogs", "global");
 }
 
 /**

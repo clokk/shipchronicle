@@ -1,5 +1,5 @@
 /**
- * Screenshot capturer for Shipchronicle
+ * Screenshot capturer for Agentlogs
  * Uses Puppeteer to capture screenshots of dev servers
  */
 
