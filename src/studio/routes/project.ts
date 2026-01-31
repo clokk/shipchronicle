@@ -22,20 +22,10 @@ export function createProjectRoutes(storagePath: string, options: ProjectRouteOp
       const commits = db.getAllCommits();
       const commitCount = commits.length;
 
-      // Count published commits
-      const publishedCount = commits.filter((c) => c.published).length;
-
       // Count total turns
       const totalTurns = commits.reduce((sum, commit) => {
         return sum + commit.sessions.reduce((s, session) => s + session.turns.length, 0);
       }, 0);
-
-      // Count total visuals
-      let visualCount = 0;
-      for (const commit of commits) {
-        const visuals = db.getVisualsForCommit(commit.id);
-        visualCount += visuals.length;
-      }
 
       // Get date range
       const dates = commits.flatMap((c) => [c.startedAt, c.closedAt]);
@@ -59,9 +49,7 @@ export function createProjectRoutes(storagePath: string, options: ProjectRouteOp
         },
         stats: {
           commitCount,
-          publishedCount,
           totalTurns,
-          visualCount,
           firstDate,
           lastDate,
         },

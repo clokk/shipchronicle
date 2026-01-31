@@ -2,28 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Chronicle Interface Theme */
+/* Agentlogs Interface Theme - Anti-slop aesthetic */
 :root {
-  --bg: #0c0a09;
-  --panel: #18181b;
-  --panel-alt: #1c1917;
-  --chronicle-blue: #38bdf8;
-  --chronicle-green: #4ade80;
-  --chronicle-amber: #fbbf24;
-  --chronicle-purple: #a78bfa;
+  /* Backgrounds - slightly warmer */
+  --bg: #0d0b0a;
+  --panel: #181614;
+  --panel-alt: #1e1b18;
+
+  /* Primary accent: Burnt orange */
+  --accent: #e07b39;
+  --accent-hover: #c66a2d;
+
+  /* Semantic */
+  --commit-closed: #5fb88e;    /* Muted sage - committed */
+  --commit-open: #d4a030;      /* Warm amber - uncommitted */
+  --user-accent: #3d84a8;      /* Muted teal - user turns */
+  --parallel: #9d7cd8;         /* Muted lavender */
+
+  /* Text */
+  --text: #e8e4df;
+  --muted: #a39e97;
+  --subtle: #6d6862;
 }
 
 body {
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  font-family: "Source Serif 4", Georgia, serif;
   background-color: var(--bg);
-  color: #fafafa;
+  color: var(--text);
   margin: 0;
   padding: 0;
 }
 
 /* Mono text for code elements */
 .font-mono {
-  font-family: "JetBrains Mono", monospace;
+  font-family: "Fira Code", "JetBrains Mono", monospace;
+}
+
+/* App root with subtle radial vignette */
+.app-root {
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    var(--bg) 0%,
+    #000000 100%
+  );
+}
+
+/* Signature animations - maximum restraint */
+
+/* 1. Detail panel entrance - subtle slide-in */
+@keyframes slide-in-panel {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in-panel 0.2s ease-out;
+}
+
+/* 2. Tool call accordion expansion */
+@keyframes expand-accordion {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
+}
+
+.animate-expand {
+  animation: expand-accordion 0.2s ease-out;
+  overflow: hidden;
 }
 
 /* Scrollbar styling */
@@ -47,18 +103,42 @@ body {
 
 /* Custom utilities */
 @layer utilities {
-  .text-chronicle-blue {
-    color: var(--chronicle-blue);
+  /* Primary accent */
+  .text-accent {
+    color: var(--accent);
   }
-  .text-chronicle-green {
-    color: var(--chronicle-green);
+  .bg-accent {
+    background-color: var(--accent);
   }
-  .text-chronicle-amber {
-    color: var(--chronicle-amber);
+  .border-accent {
+    border-color: var(--accent);
   }
-  .text-chronicle-purple {
-    color: var(--chronicle-purple);
+
+  /* Semantic colors */
+  .text-commit-closed {
+    color: var(--commit-closed);
   }
+  .text-commit-open {
+    color: var(--commit-open);
+  }
+  .text-user-accent {
+    color: var(--user-accent);
+  }
+  .text-parallel {
+    color: var(--parallel);
+  }
+
+  .border-commit-closed {
+    border-color: var(--commit-closed);
+  }
+  .border-commit-open {
+    border-color: var(--commit-open);
+  }
+  .border-user-accent {
+    border-color: var(--user-accent);
+  }
+
+  /* Backgrounds */
   .bg-bg {
     background-color: var(--bg);
   }
@@ -68,16 +148,41 @@ body {
   .bg-panel-alt {
     background-color: var(--panel-alt);
   }
+
+  /* Text colors */
+  .text-primary {
+    color: var(--text);
+  }
+  .text-muted {
+    color: var(--muted);
+  }
+  .text-subtle {
+    color: var(--subtle);
+  }
+
+  /* Legacy aliases for gradual migration */
+  .text-chronicle-blue {
+    color: var(--user-accent);
+  }
+  .text-chronicle-green {
+    color: var(--commit-closed);
+  }
+  .text-chronicle-amber {
+    color: var(--commit-open);
+  }
+  .text-chronicle-purple {
+    color: var(--parallel);
+  }
   .border-chronicle-blue {
-    border-color: var(--chronicle-blue);
+    border-color: var(--user-accent);
   }
   .border-chronicle-green {
-    border-color: var(--chronicle-green);
+    border-color: var(--commit-closed);
   }
   .border-chronicle-amber {
-    border-color: var(--chronicle-amber);
+    border-color: var(--commit-open);
   }
   .border-chronicle-purple {
-    border-color: var(--chronicle-purple);
+    border-color: var(--parallel);
   }
 }

@@ -6,17 +6,33 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: "#0c0a09",
-        panel: "#18181b",
-        "panel-alt": "#1c1917",
-        "chronicle-blue": "#38bdf8",
-        "chronicle-green": "#4ade80",
-        "chronicle-amber": "#fbbf24",
-        "chronicle-purple": "#a78bfa",
+        // Backgrounds
+        bg: "#0d0b0a",
+        panel: "#181614",
+        "panel-alt": "#1e1b18",
+        // Primary accent
+        accent: {
+          DEFAULT: "#e07b39",
+          hover: "#c66a2d",
+        },
+        // Semantic
+        "commit-closed": "#5fb88e",
+        "commit-open": "#d4a030",
+        "user-accent": "#3d84a8",
+        parallel: "#9d7cd8",
+        // Text
+        text: "#e8e4df",
+        muted: "#a39e97",
+        subtle: "#6d6862",
+        // Legacy aliases
+        "chronicle-blue": "#3d84a8",
+        "chronicle-green": "#5fb88e",
+        "chronicle-amber": "#d4a030",
+        "chronicle-purple": "#9d7cd8",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
-        mono: ["JetBrains Mono", "monospace"],
+        sans: ['"Source Serif 4"', "Georgia", "serif"],
+        mono: ['"Fira Code"', '"JetBrains Mono"', "monospace"],
       },
     },
   },

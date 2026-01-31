@@ -5,7 +5,6 @@ import {
   deleteCommit as apiDeleteCommit,
   type CognitiveCommit,
 } from "../api";
-import VisualGallery from "./VisualGallery";
 import TurnView from "./TurnView";
 
 interface CommitDetailProps {
@@ -92,18 +91,6 @@ export default function CommitDetail({
     }
   };
 
-  const handleTogglePublished = async () => {
-    try {
-      const { commit: updated } = await updateCommit(commitId, {
-        published: !commit.published,
-      });
-      setCommit({ ...commit, ...updated });
-      onUpdate({ ...commit, ...updated });
-    } catch (err) {
-      console.error("Failed to toggle published:", err);
-    }
-  };
-
   const handleDelete = async () => {
     try {
       await apiDeleteCommit(commitId);
@@ -113,18 +100,11 @@ export default function CommitDetail({
     }
   };
 
-  const handleVisualDelete = (visualId: string) => {
-    if (commit.visuals) {
-      const updatedVisuals = commit.visuals.filter((v) => v.id !== visualId);
-      setCommit({ ...commit, visuals: updatedVisuals });
-    }
-  };
-
   const turnCount = commit.sessions.reduce((sum, s) => sum + s.turns.length, 0);
   const projectColor = commit.projectName ? getProjectColor(commit.projectName) : null;
 
   return (
-    <div className="h-full flex flex-col" style={{ minHeight: 0 }}>
+    <div className="h-full flex flex-col animate-slide-in" style={{ minHeight: 0 }}>
       {/* Fixed Header Section */}
       <div className="flex-shrink-0 p-6 pb-4 border-b border-zinc-800 bg-panel-alt">
         <div className="flex items-start justify-between">
@@ -194,16 +174,6 @@ export default function CommitDetail({
 
           {/* Actions */}
           <div className="flex items-center gap-2 ml-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={commit.published || false}
-                onChange={handleTogglePublished}
-                className="w-4 h-4 rounded border-zinc-600 bg-zinc-800 text-chronicle-green focus:ring-chronicle-green/50"
-              />
-              <span className="text-sm text-zinc-400">Published</span>
-            </label>
-
             <button
               onClick={() => setShowDeleteConfirm(true)}
               className="px-3 py-1.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded transition-colors"
@@ -232,14 +202,6 @@ export default function CommitDetail({
           </span>
         </div>
       </div>
-
-      {/* Visuals Gallery - only if present */}
-      {commit.visuals && commit.visuals.length > 0 && (
-        <div className="flex-shrink-0 px-6 py-4 border-b border-zinc-800">
-          <h3 className="text-sm font-medium text-zinc-400 mb-2">Visuals</h3>
-          <VisualGallery visuals={commit.visuals} onDelete={handleVisualDelete} />
-        </div>
-      )}
 
       {/* Conversation Section - independent scroll */}
       <div

@@ -41,17 +41,13 @@ export function createCommitRoutes(projectPath: string, options: CommitRouteOpti
         return true;
       });
 
-      // Get visuals for each commit
-      const commitsWithVisuals = commits.map((commit) => {
-        const visuals = db.getVisualsForCommit(commit.id);
-        return {
-          ...commit,
-          visuals,
-          turnCount: commit.sessions.reduce((sum, s) => sum + s.turns.length, 0),
-        };
-      });
+      // Add turn count for each commit
+      const commitsWithTurnCount = commits.map((commit) => ({
+        ...commit,
+        turnCount: commit.sessions.reduce((sum, s) => sum + s.turns.length, 0),
+      }));
 
-      return c.json({ commits: commitsWithVisuals });
+      return c.json({ commits: commitsWithTurnCount });
     } finally {
       db.close();
     }
@@ -68,25 +64,17 @@ export function createCommitRoutes(projectPath: string, options: CommitRouteOpti
         return c.json({ error: "Commit not found" }, 404);
       }
 
-      const visuals = db.getVisualsForCommit(id);
-
-      return c.json({
-        commit: {
-          ...commit,
-          visuals,
-        },
-      });
+      return c.json({ commit });
     } finally {
       db.close();
     }
   });
 
-  // PATCH /api/commits/:id - Update commit (title, published, hidden)
+  // PATCH /api/commits/:id - Update commit (title, hidden)
   app.patch("/:id", async (c) => {
     const id = c.req.param("id");
     const body = await c.req.json<{
       title?: string;
-      published?: boolean;
       hidden?: boolean;
       displayOrder?: number;
     }>();
@@ -134,7 +122,6 @@ export function createCommitRoutes(projectPath: string, options: CommitRouteOpti
     const body = await c.req.json<{
       ids: string[];
       updates: {
-        published?: boolean;
         hidden?: boolean;
       };
     }>();

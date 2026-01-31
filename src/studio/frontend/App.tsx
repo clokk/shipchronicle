@@ -3,7 +3,6 @@ import {
   fetchProject,
   fetchProjects,
   fetchCommits,
-  bulkUpdateCommits,
   type ProjectInfo,
   type ProjectListItem,
   type CognitiveCommit,
@@ -16,7 +15,6 @@ export default function App() {
   const [project, setProject] = useState<ProjectInfo | null>(null);
   const [commits, setCommits] = useState<CognitiveCommit[]>([]);
   const [selectedCommitId, setSelectedCommitId] = useState<string | null>(null);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,9 +69,6 @@ export default function App() {
       } else {
         setSelectedCommitId(null);
       }
-
-      // Clear selection when filter changes
-      setSelectedIds(new Set());
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -82,30 +77,6 @@ export default function App() {
   };
 
   const selectedCommit = commits.find((c) => c.id === selectedCommitId);
-
-  const handleToggleSelect = (id: string) => {
-    const newSelected = new Set(selectedIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedIds(newSelected);
-  };
-
-  const handlePublishSelected = async () => {
-    if (selectedIds.size === 0) return;
-
-    try {
-      await bulkUpdateCommits(Array.from(selectedIds), { published: true });
-      // Refresh commits
-      const { commits: updated } = await fetchCommits(selectedProject || undefined);
-      setCommits(updated);
-      setSelectedIds(new Set());
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  };
 
   const handleCommitUpdate = (updated: CognitiveCommit) => {
     setCommits((prev) =>
@@ -118,8 +89,6 @@ export default function App() {
     if (selectedCommitId === id) {
       setSelectedCommitId(commits[0]?.id || null);
     }
-    selectedIds.delete(id);
-    setSelectedIds(new Set(selectedIds));
   };
 
   const isGlobal = project?.project.global || false;
@@ -143,13 +112,11 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen bg-bg flex flex-col overflow-hidden">
+    <div className="h-screen app-root flex flex-col overflow-hidden">
       <Header
         projectName={project?.project.name || "Unknown Project"}
         isGlobal={isGlobal}
         stats={project?.stats}
-        selectedCount={selectedIds.size}
-        onPublishSelected={handlePublishSelected}
         projects={projects}
         totalCount={totalCount}
         selectedProject={selectedProject}
@@ -162,9 +129,7 @@ export default function App() {
           <CommitList
             commits={commits}
             selectedCommitId={selectedCommitId}
-            selectedIds={selectedIds}
             onSelectCommit={setSelectedCommitId}
-            onToggleSelect={handleToggleSelect}
             showProjectBadges={showProjectBadges}
           />
         </div>

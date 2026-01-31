@@ -6,12 +6,8 @@ interface HeaderProps {
   isGlobal?: boolean;
   stats?: {
     commitCount: number;
-    publishedCount: number;
     totalTurns: number;
-    visualCount: number;
   };
-  selectedCount: number;
-  onPublishSelected: () => void;
   // Global mode props
   projects?: ProjectListItem[];
   totalCount?: number;
@@ -23,8 +19,6 @@ export default function Header({
   projectName,
   isGlobal,
   stats,
-  selectedCount,
-  onPublishSelected,
   projects,
   totalCount,
   selectedProject,
@@ -62,32 +56,9 @@ export default function Header({
           {stats && (
             <div className="flex items-center gap-4 text-sm text-zinc-400">
               <span>{stats.commitCount} commits</span>
-              <span className="text-chronicle-green">
-                {stats.publishedCount} published
-              </span>
               <span>{stats.totalTurns} turns</span>
-              <span>{stats.visualCount} visuals</span>
             </div>
           )}
-        </div>
-
-        <div className="flex items-center gap-3">
-          {selectedCount > 0 && (
-            <span className="text-sm text-zinc-400">
-              {selectedCount} selected
-            </span>
-          )}
-          <button
-            onClick={onPublishSelected}
-            disabled={selectedCount === 0}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-              selectedCount > 0
-                ? "bg-chronicle-blue text-black hover:bg-chronicle-blue/90"
-                : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-            }`}
-          >
-            Publish Selected
-          </button>
         </div>
       </div>
     </header>

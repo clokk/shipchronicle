@@ -31,11 +31,6 @@ export default function TurnView({ turn }: TurnViewProps) {
         <span className="text-xs text-zinc-600">
           {formatTime(turn.timestamp)}
         </span>
-        {turn.triggersVisualUpdate && (
-          <span className="px-1.5 py-0.5 text-xs rounded bg-chronicle-amber/20 text-chronicle-amber">
-            visual update
-          </span>
-        )}
       </div>
 
       {/* Content */}
@@ -57,7 +52,7 @@ export default function TurnView({ turn }: TurnViewProps) {
           </button>
 
           {toolCallsExpanded && (
-            <div className="mt-2 space-y-2">
+            <div className="mt-2 space-y-2 animate-expand">
               {turn.toolCalls!.map((tc) => (
                 <div
                   key={tc.id}

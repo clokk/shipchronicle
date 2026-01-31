@@ -9,7 +9,6 @@ import * as path from "path";
 import * as fs from "fs";
 
 import { createCommitRoutes } from "./routes/commits";
-import { createVisualRoutes } from "./routes/visuals";
 import { createProjectRoutes } from "./routes/project";
 
 export interface ServerOptions {
@@ -25,7 +24,6 @@ export function createApp(storagePath: string, options: ServerOptions = {}): Hon
   // Mount API routes
   app.route("/api/project", createProjectRoutes(storagePath, options));
   app.route("/api/commits", createCommitRoutes(storagePath, options));
-  app.route("/api/visuals", createVisualRoutes(storagePath, options));
 
   // Serve static frontend files
   // In compiled mode, __dirname is dist/studio, but frontend is built to src/studio/frontend/dist
