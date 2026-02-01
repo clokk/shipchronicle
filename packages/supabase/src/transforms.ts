@@ -102,7 +102,12 @@ export function transformCommitWithRelations(
       return transformSession(dbSession, turns);
     }) ?? [];
 
-  return transformCommit(db, sessions);
+  const commit = transformCommit(db, sessions);
+
+  // Compute turnCount from sessions
+  commit.turnCount = sessions.reduce((sum, s) => sum + s.turns.length, 0);
+
+  return commit;
 }
 
 /**
