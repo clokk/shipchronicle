@@ -85,6 +85,7 @@ A cognitive commit closes when:
 | `apps/cli/src/storage/schema.ts` | Database schema + migrations |
 | `apps/cli/src/sync/auth.ts` | GitHub OAuth PKCE flow |
 | `apps/cli/src/sync/push.ts` | Push local commits to cloud |
+| `apps/cli/src/commands/cloud.ts` | Cloud management commands (clear) |
 | `apps/cli/src/sync/pull.ts` | Pull commits from cloud |
 | `apps/cli/src/studio/server.ts` | Local dashboard Hono server |
 | `apps/web/app/(dashboard)/` | Web platform dashboard pages |

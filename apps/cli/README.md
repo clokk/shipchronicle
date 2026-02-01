@@ -100,6 +100,37 @@ db.daemonState.getCurrentCommitId();
 db.daemonState.setFilePosition(filePath, position);
 ```
 
+## Cloud Sync Commands
+
+### Push Options
+
+```bash
+# Push with progress bar (default)
+cogcommit push
+
+# Verbose mode (shows each commit, disables progress bar)
+cogcommit push --verbose
+
+# Preview what would be pushed
+cogcommit push --dry-run
+
+# Force re-push all commits (resets sync status)
+cogcommit push --force
+
+# Retry previously failed commits
+cogcommit push --retry
+```
+
+### Cloud Management
+
+```bash
+# Delete all your cloud data (requires confirmation)
+cogcommit cloud clear
+
+# Skip confirmation (for scripts)
+cogcommit cloud clear --yes
+```
+
 ## Publishing
 
 ```bash

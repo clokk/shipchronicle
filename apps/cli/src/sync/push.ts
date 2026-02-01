@@ -9,6 +9,14 @@ import type { SyncResult } from "./types";
 import { v5 as uuidv5 } from "uuid";
 import { COGCOMMIT_UUID_NAMESPACE, SYNC_BATCH_SIZE } from "../constants";
 import { generateCommitTitle } from "../utils/title";
+import cliProgress from "cli-progress";
+
+export interface PushOptions {
+  verbose?: boolean;
+  force?: boolean;
+  dryRun?: boolean;
+  retry?: boolean;
+}
 
 /**
  * Convert a string to a valid UUID
@@ -29,7 +37,7 @@ function toUuid(id: string): string {
  */
 export async function pushToCloud(
   db: CogCommitDB,
-  options: { verbose?: boolean } = {}
+  options: PushOptions = {}
 ): Promise<SyncResult> {
   const result: SyncResult = {
     pushed: 0,
@@ -41,6 +49,45 @@ export async function pushToCloud(
   const tokens = loadAuthTokens();
   if (!tokens) {
     result.errors.push("Not authenticated");
+    return result;
+  }
+
+  // Handle --force: reset all commits to pending
+  if (options.force) {
+    const resetCount = db.commits.resetAllSyncStatus();
+    console.log(`Reset ${resetCount} commits to pending status\n`);
+  }
+
+  // Get commits based on mode
+  let pendingCommits: CognitiveCommit[];
+  if (options.retry) {
+    pendingCommits = db.commits.getBySyncStatus("error");
+    if (options.verbose) {
+      console.log(`Found ${pendingCommits.length} failed commits to retry`);
+    }
+  } else {
+    pendingCommits = db.commits.getPending();
+    if (options.verbose) {
+      console.log(`Found ${pendingCommits.length} pending commits to push`);
+    }
+  }
+
+  // Handle --dry-run: just show stats
+  if (options.dryRun) {
+    const sessionCount = pendingCommits.reduce((acc, c) => acc + c.sessions.length, 0);
+    const turnCount = pendingCommits.reduce(
+      (acc, c) => acc + c.sessions.reduce((s, sess) => s + sess.turns.length, 0),
+      0
+    );
+
+    console.log("Dry run - would push:");
+    console.log(`  ${pendingCommits.length} commits`);
+    console.log(`  ${sessionCount} sessions`);
+    console.log(`  ${turnCount} turns`);
+    return result;
+  }
+
+  if (pendingCommits.length === 0) {
     return result;
   }
 
@@ -58,12 +105,21 @@ export async function pushToCloud(
 
   const machineUuid = machineData?.id || null;
 
-  // Get pending commits
-  const pendingCommits = db.commits.getPending();
+  // Create progress bar (unless verbose mode)
+  const progressBar =
+    !options.verbose && pendingCommits.length > 0
+      ? new cliProgress.SingleBar(
+          {
+            format: "Pushing [{bar}] {percentage}% | {value}/{total} commits",
+            barCompleteChar: "\u2588",
+            barIncompleteChar: "\u2591",
+            hideCursor: true,
+          },
+          cliProgress.Presets.shades_classic
+        )
+      : null;
 
-  if (options.verbose) {
-    console.log(`Found ${pendingCommits.length} pending commits to push`);
-  }
+  progressBar?.start(pendingCommits.length, 0);
 
   for (const commit of pendingCommits) {
     try {
@@ -79,6 +135,7 @@ export async function pushToCloud(
           // Conflict detected - cloud has newer version
           db.commits.updateSyncStatus(commit.id, "conflict");
           result.conflicts++;
+          progressBar?.increment();
           continue;
         }
       }
@@ -100,6 +157,7 @@ export async function pushToCloud(
       });
 
       result.pushed++;
+      progressBar?.increment();
 
       if (options.verbose) {
         console.log(`Pushed commit ${commit.id.substring(0, 8)}`);
@@ -107,8 +165,11 @@ export async function pushToCloud(
     } catch (error) {
       result.errors.push(`Failed to push commit ${commit.id}: ${(error as Error).message}`);
       db.commits.updateSyncStatus(commit.id, "error");
+      progressBar?.increment();
     }
   }
+
+  progressBar?.stop();
 
   return result;
 }

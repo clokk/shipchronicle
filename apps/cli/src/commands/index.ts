@@ -11,3 +11,4 @@ export { registerImportCommand } from "./import";
 export { registerAuthCommands } from "./auth";
 export { registerSyncCommands } from "./sync";
 export { registerConfigCommands } from "./config";
+export { registerCloudCommands } from "./cloud";

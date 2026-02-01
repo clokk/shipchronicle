@@ -14,6 +14,7 @@ import {
   registerAuthCommands,
   registerSyncCommands,
   registerConfigCommands,
+  registerCloudCommands,
 } from "./commands";
 
 const program = new Command();
@@ -32,5 +33,6 @@ registerImportCommand(program);
 registerAuthCommands(program);
 registerSyncCommands(program);
 registerConfigCommands(program);
+registerCloudCommands(program);
 
 program.parse();

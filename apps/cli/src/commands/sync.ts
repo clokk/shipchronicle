@@ -17,7 +17,10 @@ export function registerSyncCommands(program: Command): void {
   program
     .command("push")
     .description("Push local commits to cloud")
-    .option("-v, --verbose", "Show verbose output")
+    .option("-v, --verbose", "Show verbose output (disables progress bar)")
+    .option("-f, --force", "Reset sync status and re-push all commits")
+    .option("-n, --dry-run", "Show what would be pushed without pushing")
+    .option("-r, --retry", "Retry previously failed commits")
     .action(async (options) => {
       try {
         if (!isAuthenticated()) {
@@ -28,20 +31,30 @@ export function registerSyncCommands(program: Command): void {
         const storagePath = ensureGlobalStorageDir();
         const db = new CogCommitDB(storagePath, { rawStoragePath: true });
 
-        console.log("Pushing to cloud...");
-        const result = await pushToCloud(db, { verbose: options.verbose });
+        if (!options.dryRun) {
+          console.log("Pushing to cloud...");
+        }
+
+        const result = await pushToCloud(db, {
+          verbose: options.verbose,
+          force: options.force,
+          dryRun: options.dryRun,
+          retry: options.retry,
+        });
 
         db.close();
 
-        console.log(`\nPush complete:`);
-        console.log(`  Pushed: ${result.pushed} commits`);
-        if (result.conflicts > 0) {
-          console.log(`  Conflicts: ${result.conflicts} (run 'cogcommit sync' to resolve)`);
-        }
-        if (result.errors.length > 0) {
-          console.log(`  Errors: ${result.errors.length}`);
-          for (const err of result.errors) {
-            console.log(`    - ${err}`);
+        if (!options.dryRun) {
+          console.log(`\nPush complete:`);
+          console.log(`  Pushed: ${result.pushed} commits`);
+          if (result.conflicts > 0) {
+            console.log(`  Conflicts: ${result.conflicts} (run 'cogcommit sync' to resolve)`);
+          }
+          if (result.errors.length > 0) {
+            console.log(`  Errors: ${result.errors.length}`);
+            for (const err of result.errors) {
+              console.log(`    - ${err}`);
+            }
           }
         }
       } catch (error) {

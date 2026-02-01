@@ -325,6 +325,20 @@ export class CommitsRepository {
     return result.changes > 0;
   }
 
+  /**
+   * Reset all commits to pending status (for --force push)
+   */
+  resetAllSyncStatus(): number {
+    const result = this.db
+      .prepare(`
+        UPDATE cognitive_commits
+        SET sync_status = 'pending', cloud_id = NULL, cloud_version = 0, last_synced_at = NULL
+      `)
+      .run();
+
+    return result.changes;
+  }
+
   private rowToCommit(row: CommitRow): CognitiveCommit {
     const sessions = this.sessionsRepo.getForCommit(row.id);
 
