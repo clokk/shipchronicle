@@ -107,7 +107,7 @@ export default function DashboardLoading() {
                 visible: { opacity: 1, y: 0 },
               }}
             >
-              <div className="h-8 w-8 bg-chronicle-blue/30 rounded-full flex-shrink-0 animate-pulse" />
+              <div className="h-8 w-8 bg-subtle/40 rounded-full flex-shrink-0 animate-pulse" />
               <div className="flex-1 space-y-2">
                 <div className="h-4 w-20 bg-subtle/40 rounded animate-pulse" />
                 <div className="h-32 w-full bg-subtle/40 rounded-lg relative overflow-hidden animate-pulse">
