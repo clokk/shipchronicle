@@ -22,9 +22,9 @@ export async function GET(request: Request) {
       .select(
         `
         *,
-        sessions:cognitive_sessions (
+        sessions (
           *,
-          turns:cognitive_turns (*)
+          turns (*)
         )
       `
       )

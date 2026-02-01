@@ -26,9 +26,9 @@ export default async function DashboardPage() {
     .select(
       `
       *,
-      sessions:cognitive_sessions (
+      sessions (
         *,
-        turns:cognitive_turns (*)
+        turns (*)
       )
     `
     )
