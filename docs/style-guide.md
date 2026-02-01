@@ -127,8 +127,8 @@
 
 ```tsx
 <div className="bg-user-accent/5 border-l-2 border-user-accent pl-4 py-2 my-2">
-  <span className="text-sm font-medium text-user-accent">User</span>
-  <p className="text-primary">{content}</p>
+  <span className="text-sm font-medium text-blue-400">User</span>
+  <p className="text-zinc-200">{content}</p>
 </div>
 ```
 
@@ -137,7 +137,7 @@
 ```tsx
 <div className="bg-zinc-900/50 border-l-2 border-zinc-700 pl-4 py-2 my-2">
   <span className="text-sm font-medium text-muted">Assistant</span>
-  <p className="text-primary">{content}</p>
+  <p className="text-zinc-200">{content}</p>
 </div>
 ```
 

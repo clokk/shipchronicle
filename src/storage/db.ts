@@ -90,8 +90,8 @@ export class AgentlogsDB {
   insertCommit(commit: CognitiveCommit): void {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO cognitive_commits
-      (id, git_hash, started_at, closed_at, closed_by, parallel, files_read, files_changed, published, hidden, display_order, title, project_name, source)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (id, git_hash, started_at, closed_at, closed_by, parallel, files_read, files_changed, published, hidden, display_order, title, project_name, source, cloud_id, sync_status, cloud_version, local_version, last_synced_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -108,7 +108,12 @@ export class AgentlogsDB {
       commit.displayOrder || 0,
       commit.title || null,
       commit.projectName || null,
-      commit.source || "claude_code"
+      commit.source || "claude_code",
+      commit.cloudId || null,
+      commit.syncStatus || "pending",
+      commit.cloudVersion || 0,
+      commit.localVersion || 1,
+      commit.lastSyncedAt || null
     );
 
     // Insert sessions
@@ -207,11 +212,11 @@ export class AgentlogsDB {
   }
 
   /**
-   * Update a cognitive commit (for curation)
+   * Update a cognitive commit (for curation and sync)
    */
   updateCommit(
     id: string,
-    updates: Partial<Pick<CognitiveCommit, "title" | "published" | "hidden" | "displayOrder">>
+    updates: Partial<Pick<CognitiveCommit, "title" | "published" | "hidden" | "displayOrder" | "gitHash" | "closedBy">>
   ): boolean {
     const fields: string[] = [];
     const values: (string | number | null)[] = [];
@@ -232,8 +237,19 @@ export class AgentlogsDB {
       fields.push("display_order = ?");
       values.push(updates.displayOrder);
     }
+    if (updates.gitHash !== undefined) {
+      fields.push("git_hash = ?");
+      values.push(updates.gitHash);
+    }
+    if (updates.closedBy !== undefined) {
+      fields.push("closed_by = ?");
+      values.push(updates.closedBy);
+    }
 
     if (fields.length === 0) return false;
+
+    // Also increment local version for sync tracking
+    fields.push("local_version = local_version + 1");
 
     values.push(id);
     const stmt = this.db.prepare(
@@ -298,6 +314,12 @@ export class AgentlogsDB {
       projectName: row.project_name || undefined,
       // Source agent (v5)
       source: (row.source as CognitiveCommit["source"]) || "claude_code",
+      // Sync metadata (v6)
+      cloudId: row.cloud_id || undefined,
+      syncStatus: (row.sync_status as CognitiveCommit["syncStatus"]) || "pending",
+      cloudVersion: row.cloud_version || 0,
+      localVersion: row.local_version || 1,
+      lastSyncedAt: row.last_synced_at || undefined,
     };
   }
 
@@ -435,6 +457,7 @@ export class AgentlogsDB {
       path: row.path,
       capturedAt: row.captured_at,
       caption: row.caption || undefined,
+      cloudUrl: row.cloud_url || undefined,
     }));
   }
 
@@ -477,6 +500,7 @@ export class AgentlogsDB {
       path: row.path,
       capturedAt: row.captured_at,
       caption: row.caption || undefined,
+      cloudUrl: row.cloud_url || undefined,
     };
   }
 
@@ -587,6 +611,211 @@ export class AgentlogsDB {
       this.deleteDaemonState("current_commit_id");
     }
   }
+
+  // ============================================
+  // Sync Methods (v6)
+  // ============================================
+
+  /**
+   * Get commits by sync status
+   */
+  getCommitsBySyncStatus(status: string): CognitiveCommit[] {
+    const rows = this.db
+      .prepare("SELECT * FROM cognitive_commits WHERE sync_status = ? ORDER BY closed_at DESC")
+      .all(status) as CommitRow[];
+
+    return rows.map((row) => this.rowToCommit(row));
+  }
+
+  /**
+   * Get pending commits (not yet synced to cloud)
+   */
+  getPendingCommits(): CognitiveCommit[] {
+    return this.getCommitsBySyncStatus("pending");
+  }
+
+  /**
+   * Get a commit by cloud ID
+   */
+  getCommitByCloudId(cloudId: string): CognitiveCommit | null {
+    const row = this.db
+      .prepare("SELECT * FROM cognitive_commits WHERE cloud_id = ?")
+      .get(cloudId) as CommitRow | undefined;
+
+    if (!row) return null;
+
+    return this.rowToCommit(row);
+  }
+
+  /**
+   * Update sync status for a commit
+   */
+  updateSyncStatus(id: string, status: string): boolean {
+    const stmt = this.db.prepare(
+      "UPDATE cognitive_commits SET sync_status = ?, local_version = local_version + 1 WHERE id = ?"
+    );
+    const result = stmt.run(status, id);
+    return result.changes > 0;
+  }
+
+  /**
+   * Update sync metadata for a commit
+   */
+  updateSyncMetadata(
+    id: string,
+    metadata: {
+      cloudId?: string;
+      syncStatus?: string;
+      cloudVersion?: number;
+      localVersion?: number;
+      lastSyncedAt?: string;
+    }
+  ): boolean {
+    const fields: string[] = [];
+    const values: (string | number | null)[] = [];
+
+    if (metadata.cloudId !== undefined) {
+      fields.push("cloud_id = ?");
+      values.push(metadata.cloudId);
+    }
+    if (metadata.syncStatus !== undefined) {
+      fields.push("sync_status = ?");
+      values.push(metadata.syncStatus);
+    }
+    if (metadata.cloudVersion !== undefined) {
+      fields.push("cloud_version = ?");
+      values.push(metadata.cloudVersion);
+    }
+    if (metadata.localVersion !== undefined) {
+      fields.push("local_version = ?");
+      values.push(metadata.localVersion);
+    }
+    if (metadata.lastSyncedAt !== undefined) {
+      fields.push("last_synced_at = ?");
+      values.push(metadata.lastSyncedAt);
+    }
+
+    if (fields.length === 0) return false;
+
+    values.push(id);
+    const stmt = this.db.prepare(
+      `UPDATE cognitive_commits SET ${fields.join(", ")} WHERE id = ?`
+    );
+    const result = stmt.run(...values);
+    return result.changes > 0;
+  }
+
+  /**
+   * Increment local version for a commit
+   */
+  incrementLocalVersion(id: string): boolean {
+    const stmt = this.db.prepare(
+      "UPDATE cognitive_commits SET local_version = local_version + 1 WHERE id = ?"
+    );
+    const result = stmt.run(id);
+    return result.changes > 0;
+  }
+
+  /**
+   * Get last sync time
+   */
+  getLastSyncTime(): string | null {
+    return this.getDaemonState("last_sync_time");
+  }
+
+  /**
+   * Set last sync time
+   */
+  setLastSyncTime(time: string): void {
+    this.setDaemonState("last_sync_time", time);
+  }
+
+  /**
+   * Upsert a session (for pull sync)
+   */
+  upsertSession(
+    commitId: string,
+    session: { id: string; startedAt: string; endedAt: string }
+  ): void {
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO sessions
+      (id, commit_id, started_at, ended_at)
+      VALUES (?, ?, ?, ?)
+    `);
+
+    stmt.run(session.id, commitId, session.startedAt, session.endedAt);
+  }
+
+  /**
+   * Upsert a turn (for pull sync)
+   */
+  upsertTurn(
+    sessionId: string,
+    turn: {
+      id: string;
+      role: string;
+      content: string | null;
+      timestamp: string;
+      toolCalls?: unknown;
+      triggersVisual?: boolean;
+      model?: string | null;
+    }
+  ): void {
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO turns
+      (id, session_id, role, content, timestamp, tool_calls, triggers_visual, model)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    stmt.run(
+      turn.id,
+      sessionId,
+      turn.role,
+      turn.content,
+      turn.timestamp,
+      turn.toolCalls ? JSON.stringify(turn.toolCalls) : null,
+      turn.triggersVisual ? 1 : 0,
+      turn.model || null
+    );
+  }
+
+  /**
+   * Get visuals for a commit (with cloud URL info)
+   */
+  getVisuals(commitId: string): Array<{
+    id: string;
+    commitId: string;
+    type: string;
+    path: string;
+    cloudUrl: string | null;
+    capturedAt: string;
+    caption: string | null;
+  }> {
+    const rows = this.db
+      .prepare("SELECT * FROM visuals WHERE commit_id = ? ORDER BY captured_at")
+      .all(commitId) as Array<VisualRow & { cloud_url?: string | null }>;
+
+    return rows.map((row) => ({
+      id: row.id,
+      commitId: row.commit_id,
+      type: row.type,
+      path: row.path,
+      cloudUrl: row.cloud_url || null,
+      capturedAt: row.captured_at,
+      caption: row.caption,
+    }));
+  }
+
+  /**
+   * Update visual cloud URL
+   */
+  updateVisualCloudUrl(id: string, cloudUrl: string): boolean {
+    const stmt = this.db.prepare(
+      "UPDATE visuals SET cloud_url = ?, sync_status = 'synced' WHERE id = ?"
+    );
+    const result = stmt.run(cloudUrl, id);
+    return result.changes > 0;
+  }
 }
 
 // Row type interfaces for SQLite results
@@ -608,6 +837,12 @@ interface CommitRow {
   project_name: string | null;
   // Source agent (v5)
   source: string | null;
+  // Sync metadata (v6)
+  cloud_id: string | null;
+  sync_status: string | null;
+  cloud_version: number | null;
+  local_version: number | null;
+  last_synced_at: string | null;
 }
 
 interface SessionRow {
@@ -635,4 +870,10 @@ interface VisualRow {
   path: string;
   captured_at: string;
   caption: string | null;
+  // Sync metadata (v6)
+  cloud_id: string | null;
+  sync_status: string | null;
+  cloud_version: number | null;
+  local_version: number | null;
+  cloud_url: string | null;
 }

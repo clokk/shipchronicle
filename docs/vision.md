@@ -1,6 +1,6 @@
 # Agentlogs
 
-> A repository for your agent conversations.
+> Git for your agent conversations. GitHub for syncing them everywhere.
 
 ## The Problem
 
@@ -12,14 +12,30 @@ Git tracks *what* changed. Nothing tracks *how it got built*.
 
 ## The Solution
 
-Agentlogs extracts your Claude Code conversations and stores them in a searchable repository, linked to the git commits they produced.
+Agentlogs is a **repository for your agent conversations** — like git is for code.
+
+- **Local-first**: Your conversations are stored locally in SQLite, always accessible
+- **Cloud-synced**: Push to the cloud to access from any machine (like pushing to GitHub)
+- **Linked to code**: Conversations are tied to the git commits they produced
 
 ```
 agentlogs import    # Import all Claude Code history
 agentlogs studio    # Browse your conversations
+agentlogs push      # Sync to cloud
 ```
 
-That's it. Parse, store, browse.
+### The Git/GitHub Model
+
+| Git | Agentlogs |
+|-----|-----------|
+| `git init` | `agentlogs init` |
+| `git add` + `git commit` | Automatic: daemon captures conversations |
+| `git log` | `agentlogs studio` |
+| `git push` | `agentlogs push` |
+| `git pull` | `agentlogs pull` |
+| GitHub | Agentlogs Cloud |
+
+Your conversations live locally first. Cloud sync is optional but powerful — access your full history from any machine, share chronicles publicly, and never lose context.
 
 ## The Data Model
 
@@ -102,21 +118,36 @@ Anyone who uses Claude Code and wants to:
 
 ---
 
+## Current Features
+
+### Core
+- Parse Claude Code session logs into cognitive commits
+- SQLite storage with full conversation history
+- Studio UI for browsing and curating conversations
+- Screenshot capture for visual context
+- Multi-agent support (Claude Code, Cursor, Antigravity, Codex, OpenCode)
+
+### Cloud Sync
+- `agentlogs login` — GitHub OAuth authentication
+- `agentlogs push` / `agentlogs pull` — Manual sync
+- Continuous sync — Background sync daemon
+- Cross-machine access — Your conversations anywhere
+
 ## Future Possibilities
 
 These are ideas, not commitments. The core value is the repository.
 
 ### Near-term
 - Full-text search across all conversations
-- Export to markdown/JSON
 - Better diff visualization
 - Session labels and tags
+- Conflict resolution UI
 
 ### Further out
 - Public sharing (opt-in chronicles)
-- Screenshot capture for visual context
-- Team/org mode
-- Support for other agents (Cursor, Copilot, etc.)
+- Team/org mode with shared repositories
+- End-to-end encryption option
+- Aggregate analytics (opt-in)
 
 ### Someday/maybe
 - Live rebuild of product state at each commit
@@ -141,11 +172,13 @@ Each line is a JSON object with:
 
 ### Storage Schema
 
-SQLite with migrations. Current version: v3.
+SQLite with migrations. Current version: v6.
 
-Tables: `projects`, `cognitive_commits`, `sessions`, `turns`
+**Local tables:** `cognitive_commits`, `sessions`, `turns`, `visuals`, `daemon_state`
 
-Indices on: git hash, timestamps, project ID
+**Sync columns (v6):** `cloud_id`, `sync_status`, `cloud_version`, `local_version`, `last_synced_at`
+
+Indices on: git hash, timestamps, project name, sync status
 
 ### Key Files
 

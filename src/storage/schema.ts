@@ -2,7 +2,7 @@
  * SQLite schema definitions for Agentlogs
  */
 
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 export const CREATE_TABLES = `
 -- Cognitive commits (persisted)
@@ -98,6 +98,43 @@ export const MIGRATIONS: { version: number; sql: string }[] = [
       -- Add source column to track which agent/tool the conversation was imported from
       -- Valid values: claude_code, cursor, antigravity, codex, opencode
       ALTER TABLE cognitive_commits ADD COLUMN source TEXT DEFAULT 'claude_code';
+    `,
+  },
+  {
+    version: 6,
+    sql: `
+      -- Cloud sync metadata for cognitive_commits
+      ALTER TABLE cognitive_commits ADD COLUMN cloud_id TEXT;
+      ALTER TABLE cognitive_commits ADD COLUMN sync_status TEXT DEFAULT 'pending';
+      ALTER TABLE cognitive_commits ADD COLUMN cloud_version INTEGER DEFAULT 0;
+      ALTER TABLE cognitive_commits ADD COLUMN local_version INTEGER DEFAULT 1;
+      ALTER TABLE cognitive_commits ADD COLUMN last_synced_at TEXT;
+
+      -- Cloud sync metadata for sessions
+      ALTER TABLE sessions ADD COLUMN cloud_id TEXT;
+      ALTER TABLE sessions ADD COLUMN sync_status TEXT DEFAULT 'pending';
+      ALTER TABLE sessions ADD COLUMN cloud_version INTEGER DEFAULT 0;
+      ALTER TABLE sessions ADD COLUMN local_version INTEGER DEFAULT 1;
+
+      -- Cloud sync metadata for turns
+      ALTER TABLE turns ADD COLUMN cloud_id TEXT;
+      ALTER TABLE turns ADD COLUMN sync_status TEXT DEFAULT 'pending';
+      ALTER TABLE turns ADD COLUMN cloud_version INTEGER DEFAULT 0;
+      ALTER TABLE turns ADD COLUMN local_version INTEGER DEFAULT 1;
+
+      -- Cloud sync metadata for visuals
+      ALTER TABLE visuals ADD COLUMN cloud_id TEXT;
+      ALTER TABLE visuals ADD COLUMN sync_status TEXT DEFAULT 'pending';
+      ALTER TABLE visuals ADD COLUMN cloud_version INTEGER DEFAULT 0;
+      ALTER TABLE visuals ADD COLUMN local_version INTEGER DEFAULT 1;
+      ALTER TABLE visuals ADD COLUMN cloud_url TEXT;
+
+      -- Indexes for efficient sync queries
+      CREATE INDEX IF NOT EXISTS idx_commits_sync_status ON cognitive_commits(sync_status);
+      CREATE INDEX IF NOT EXISTS idx_commits_cloud_id ON cognitive_commits(cloud_id);
+      CREATE INDEX IF NOT EXISTS idx_sessions_sync_status ON sessions(sync_status);
+      CREATE INDEX IF NOT EXISTS idx_turns_sync_status ON turns(sync_status);
+      CREATE INDEX IF NOT EXISTS idx_visuals_sync_status ON visuals(sync_status);
     `,
   },
 ];

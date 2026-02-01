@@ -117,7 +117,7 @@ const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
 
     const isUser = turn.role === "user";
     const hasToolCalls = turn.toolCalls && turn.toolCalls.length > 0;
-    const shouldCollapse = !isUser && turn.content.length > COLLAPSE_THRESHOLD;
+    const shouldCollapse = turn.content.length > COLLAPSE_THRESHOLD;
 
     const displayContent = shouldCollapse && !expanded
       ? turn.content.slice(0, PREVIEW_LENGTH)
@@ -145,7 +145,7 @@ const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
         <div className="flex items-center gap-2 mb-2">
           <span
             className={`text-sm font-medium ${
-              isUser ? "text-chronicle-blue" : "text-zinc-400"
+              isUser ? "text-blue-400" : "text-zinc-400"
             }`}
           >
             {isUser ? "User" : formatModelName(turn.model)}
@@ -179,7 +179,7 @@ const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
         {turn.content && (
           <div className="relative">
             <div
-              className="text-zinc-300 whitespace-pre-wrap leading-relaxed"
+              className="text-zinc-200 whitespace-pre-wrap leading-relaxed"
               style={{ fontSize: `${fontSize}px`, lineHeight: 1.6 }}
             >
               {searchTerm

@@ -13,6 +13,9 @@ export type ConversationSource =
   | "codex"
   | "opencode";
 
+/** Sync status for cloud sync */
+export type SyncStatus = "pending" | "synced" | "conflict" | "error";
+
 export interface ToolCall {
   id: string;
   name: string;
@@ -58,6 +61,12 @@ export interface CognitiveCommit {
   projectName?: string;
   // Source agent (v5)
   source?: ConversationSource;
+  // Sync metadata (v6)
+  cloudId?: string;
+  syncStatus?: SyncStatus;
+  cloudVersion?: number;
+  localVersion?: number;
+  lastSyncedAt?: string;
 }
 
 export interface ParseResult {
@@ -82,4 +91,5 @@ export interface Visual {
   path: string;
   capturedAt: string;
   caption?: string;
+  cloudUrl?: string;
 }

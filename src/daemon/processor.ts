@@ -30,12 +30,14 @@ import {
 import type { AgentlogsDB } from "../storage/db";
 import type { ScreenshotCapturer } from "./capturer";
 import type { AgentlogsConfig } from "../config";
+import type { SyncQueue } from "../sync/queue";
 
 export interface ProcessorOptions {
   onCommitClosed?: (commit: CognitiveCommit) => void;
   onScreenshotCaptured?: (path: string, commitId: string) => void;
   captureOnCommit?: boolean;
   verbose?: boolean;
+  syncQueue?: SyncQueue;
 }
 
 interface ProcessorState {
@@ -363,6 +365,11 @@ export class EntryProcessor {
     // Callback
     if (this.options.onCommitClosed) {
       this.options.onCommitClosed(commit);
+    }
+
+    // Trigger cloud sync if enabled
+    if (this.options.syncQueue) {
+      this.options.syncQueue.onCommitChanged(commit.id);
     }
 
     // Clear current commit ID

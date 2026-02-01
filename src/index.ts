@@ -28,6 +28,17 @@ import { AgentlogsDaemon } from "./daemon";
 import { captureScreenshot } from "./daemon/capturer";
 import { getBestCaptureUrl } from "./utils/server-detect";
 import { startStudio } from "./studio";
+import {
+  login,
+  logout,
+  isAuthenticated,
+  getCurrentUser,
+  isCloudAvailable,
+  sync,
+  getSyncStatus,
+  pushToCloud,
+  pullFromCloud,
+} from "./sync";
 
 const program = new Command();
 
@@ -710,6 +721,348 @@ program
       }
     } catch (error) {
       console.error(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+// ============================================
+// Cloud Sync Commands
+// ============================================
+
+program
+  .command("login")
+  .description("Login with GitHub to enable cloud sync")
+  .action(async () => {
+    try {
+      if (!isCloudAvailable()) {
+        console.error("Cloud sync is not configured.");
+        console.error("Set AGENTLOGS_SUPABASE_URL and AGENTLOGS_SUPABASE_ANON_KEY environment variables.");
+        process.exit(1);
+      }
+
+      if (isAuthenticated()) {
+        const user = getCurrentUser();
+        console.log(`Already logged in as ${user?.githubUsername}`);
+        console.log("Use 'agentlogs logout' to switch accounts.");
+        return;
+      }
+
+      console.log("Starting GitHub authentication...");
+      const user = await login();
+      console.log(`\nLogged in as ${user.githubUsername}`);
+      console.log("\nYou can now sync your conversations:");
+      console.log("  agentlogs push    # Push local commits to cloud");
+      console.log("  agentlogs pull    # Pull commits from cloud");
+      console.log("  agentlogs sync    # Bidirectional sync");
+    } catch (error) {
+      console.error(`Login failed: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("logout")
+  .description("Logout and clear stored credentials")
+  .action(async () => {
+    try {
+      if (!isAuthenticated()) {
+        console.log("Not logged in.");
+        return;
+      }
+
+      const user = getCurrentUser();
+      await logout();
+      console.log(`Logged out from ${user?.githubUsername}`);
+    } catch (error) {
+      console.error(`Logout failed: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("whoami")
+  .description("Show current logged-in user")
+  .action(() => {
+    if (!isAuthenticated()) {
+      console.log("Not logged in.");
+      console.log("Run 'agentlogs login' to authenticate with GitHub.");
+      return;
+    }
+
+    const user = getCurrentUser();
+    console.log(`Logged in as: ${user?.githubUsername}`);
+    console.log(`User ID: ${user?.id}`);
+  });
+
+program
+  .command("push")
+  .description("Push local commits to cloud")
+  .option("-v, --verbose", "Show verbose output")
+  .action(async (options) => {
+    try {
+      if (!isAuthenticated()) {
+        console.error("Not logged in. Run 'agentlogs login' first.");
+        process.exit(1);
+      }
+
+      const storagePath = ensureGlobalStorageDir();
+      const db = new AgentlogsDB(storagePath, { rawStoragePath: true });
+
+      console.log("Pushing to cloud...");
+      const result = await pushToCloud(db, { verbose: options.verbose });
+
+      db.close();
+
+      console.log(`\nPush complete:`);
+      console.log(`  Pushed: ${result.pushed} commits`);
+      if (result.conflicts > 0) {
+        console.log(`  Conflicts: ${result.conflicts} (run 'agentlogs sync' to resolve)`);
+      }
+      if (result.errors.length > 0) {
+        console.log(`  Errors: ${result.errors.length}`);
+        for (const err of result.errors) {
+          console.log(`    - ${err}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Push failed: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("pull")
+  .description("Pull commits from cloud")
+  .option("-v, --verbose", "Show verbose output")
+  .action(async (options) => {
+    try {
+      if (!isAuthenticated()) {
+        console.error("Not logged in. Run 'agentlogs login' first.");
+        process.exit(1);
+      }
+
+      const storagePath = ensureGlobalStorageDir();
+      const db = new AgentlogsDB(storagePath, { rawStoragePath: true });
+
+      console.log("Pulling from cloud...");
+      const result = await pullFromCloud(db, { verbose: options.verbose });
+
+      db.close();
+
+      console.log(`\nPull complete:`);
+      console.log(`  Pulled: ${result.pulled} commits`);
+      if (result.conflicts > 0) {
+        console.log(`  Conflicts: ${result.conflicts} (run 'agentlogs sync' to resolve)`);
+      }
+      if (result.errors.length > 0) {
+        console.log(`  Errors: ${result.errors.length}`);
+        for (const err of result.errors) {
+          console.log(`    - ${err}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Pull failed: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("sync")
+  .description("Bidirectional sync with cloud")
+  .option("-v, --verbose", "Show verbose output")
+  .option("--status", "Show sync status without syncing")
+  .action(async (options) => {
+    try {
+      const storagePath = ensureGlobalStorageDir();
+      const db = new AgentlogsDB(storagePath, { rawStoragePath: true });
+
+      if (options.status) {
+        const status = getSyncStatus(db);
+        console.log("\nSync Status:");
+        console.log(`  Authenticated: ${status.isOnline ? "Yes" : "No"}`);
+        console.log(`  Last sync: ${status.lastSyncAt || "Never"}`);
+        console.log(`  Pending: ${status.pendingCount} commits`);
+        console.log(`  Synced: ${status.syncedCount} commits`);
+        if (status.conflictCount > 0) {
+          console.log(`  Conflicts: ${status.conflictCount} commits`);
+        }
+        db.close();
+        return;
+      }
+
+      if (!isAuthenticated()) {
+        console.error("Not logged in. Run 'agentlogs login' first.");
+        db.close();
+        process.exit(1);
+      }
+
+      console.log("Syncing with cloud...");
+      const result = await sync(db, { verbose: options.verbose });
+
+      db.close();
+
+      console.log(`\nSync complete:`);
+      console.log(`  Pushed: ${result.pushed} commits`);
+      console.log(`  Pulled: ${result.pulled} commits`);
+      if (result.conflicts > 0) {
+        console.log(`  Conflicts: ${result.conflicts} (could not auto-resolve)`);
+      }
+      if (result.errors.length > 0) {
+        console.log(`  Errors: ${result.errors.length}`);
+        for (const err of result.errors) {
+          console.log(`    - ${err}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Sync failed: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("config")
+  .description("View or update configuration")
+  .argument("[key]", "Configuration key to get/set")
+  .argument("[value]", "Value to set")
+  .option("--list", "List all configuration values")
+  .action(async (key: string | undefined, value: string | undefined, options) => {
+    try {
+      const home = process.env.HOME || "";
+      const configPath = path.join(home, ".agentlogs", "settings.json");
+      const fs = require("fs");
+
+      // Load existing settings
+      let settings: Record<string, unknown> = {};
+      if (fs.existsSync(configPath)) {
+        settings = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      }
+
+      if (options.list || (!key && !value)) {
+        console.log("\nAgentlogs Configuration:");
+        console.log(`  storage: ${settings.storage || "local"}`);
+        console.log(`  continuous-sync: ${settings.continuousSync || false}`);
+        console.log(`  analytics-opt-in: ${settings.analyticsOptIn || false}`);
+        return;
+      }
+
+      if (key && value) {
+        // Set value
+        const validKeys = ["storage", "continuous-sync", "analytics-opt-in"];
+        if (!validKeys.includes(key)) {
+          console.error(`Unknown configuration key: ${key}`);
+          console.error(`Valid keys: ${validKeys.join(", ")}`);
+          process.exit(1);
+        }
+
+        // Convert key to camelCase for storage
+        const storageKey = key.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+
+        // Parse boolean values
+        let parsedValue: unknown = value;
+        if (value === "true") parsedValue = true;
+        else if (value === "false") parsedValue = false;
+
+        settings[storageKey] = parsedValue;
+
+        // Ensure directory exists
+        const configDir = path.dirname(configPath);
+        if (!fs.existsSync(configDir)) {
+          fs.mkdirSync(configDir, { recursive: true });
+        }
+
+        fs.writeFileSync(configPath, JSON.stringify(settings, null, 2));
+        console.log(`Set ${key} = ${value}`);
+      } else if (key) {
+        // Get value
+        const storageKey = key.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+        console.log(settings[storageKey] ?? "(not set)");
+      }
+    } catch (error) {
+      console.error(`Config error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("analytics")
+  .description("View analytics and manage opt-in")
+  .option("--opt-in", "Opt in to aggregate analytics")
+  .option("--opt-out", "Opt out of aggregate analytics")
+  .action(async (options) => {
+    try {
+      const storagePath = ensureGlobalStorageDir();
+      const db = new AgentlogsDB(storagePath, { rawStoragePath: true });
+
+      if (options.optIn || options.optOut) {
+        const home = process.env.HOME || "";
+        const configPath = path.join(home, ".agentlogs", "settings.json");
+        const fs = require("fs");
+
+        let settings: Record<string, unknown> = {};
+        if (fs.existsSync(configPath)) {
+          settings = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+        }
+
+        settings.analyticsOptIn = options.optIn ? true : false;
+        fs.writeFileSync(configPath, JSON.stringify(settings, null, 2));
+
+        console.log(options.optIn
+          ? "Opted in to aggregate analytics."
+          : "Opted out of aggregate analytics."
+        );
+        db.close();
+        return;
+      }
+
+      // Show local analytics
+      const commitCount = db.getCommitCount();
+      const projects = db.getDistinctProjects();
+      const recentCommits = db.getRecentCommits(100);
+
+      // Calculate stats
+      let totalTurns = 0;
+      let totalSessions = 0;
+      const toolUsage: Record<string, number> = {};
+
+      for (const commit of recentCommits) {
+        totalSessions += commit.sessions.length;
+        for (const session of commit.sessions) {
+          totalTurns += session.turns.length;
+          for (const turn of session.turns) {
+            if (turn.toolCalls) {
+              for (const call of turn.toolCalls) {
+                toolUsage[call.name] = (toolUsage[call.name] || 0) + 1;
+              }
+            }
+          }
+        }
+      }
+
+      db.close();
+
+      console.log("\nAgentlogs Analytics (Local)\n");
+      console.log(`Total Commits: ${commitCount}`);
+      console.log(`Projects: ${projects.length}`);
+      console.log(`\nRecent Activity (last 100 commits):`);
+      console.log(`  Sessions: ${totalSessions}`);
+      console.log(`  Turns: ${totalTurns}`);
+      console.log(`  Avg turns/commit: ${(totalTurns / Math.max(recentCommits.length, 1)).toFixed(1)}`);
+
+      if (Object.keys(toolUsage).length > 0) {
+        console.log(`\nTop Tools Used:`);
+        const sortedTools = Object.entries(toolUsage)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5);
+        for (const [tool, count] of sortedTools) {
+          console.log(`  ${tool}: ${count}`);
+        }
+      }
+
+      console.log("\n---");
+      console.log("Analytics are computed locally. No data is uploaded.");
+      console.log("Run 'agentlogs analytics --opt-in' to help improve agentlogs.");
+    } catch (error) {
+      console.error(`Analytics error: ${(error as Error).message}`);
       process.exit(1);
     }
   });

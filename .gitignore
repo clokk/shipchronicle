@@ -5,3 +5,8 @@ dist/
 
 # Agentlogs
 .agentlogs/
+
+# Environment files
+.env
+.env.local
+.env*.local
