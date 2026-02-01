@@ -13,7 +13,7 @@ export function Shimmer({ className }: ShimmerProps) {
       <motion.div
         className="absolute inset-y-0 w-full"
         style={{
-          background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
+          background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.07) 50%, transparent 100%)",
         }}
         initial={{ x: "-100%" }}
         animate={{ x: "100%" }}

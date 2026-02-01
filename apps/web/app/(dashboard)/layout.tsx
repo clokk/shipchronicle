@@ -1,26 +1,32 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import QueryProvider from "@/components/providers/QueryProvider";
+import DashboardLoading from "./dashboard/loading";
 
-async function getUser() {
+async function AuthCheck({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return user;
-}
-
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const user = await getUser();
 
   if (!user) {
     redirect("/login");
   }
 
-  // DashboardView handles its own full-screen layout
-  return <QueryProvider>{children}</QueryProvider>;
+  return <>{children}</>;
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <QueryProvider>
+      <Suspense fallback={<DashboardLoading />}>
+        <AuthCheck>{children}</AuthCheck>
+      </Suspense>
+    </QueryProvider>
+  );
 }

@@ -1,10 +1,8 @@
-import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import DashboardView from "@/components/DashboardView";
 import { getCachedCommits } from "@/lib/data/commits";
-import DashboardLoading from "./loading";
 
-async function DashboardContent() {
+export default async function DashboardPage() {
   const supabase = await createClient();
 
   const {
@@ -34,13 +32,5 @@ async function DashboardContent() {
       projects={projects}
       totalCount={totalCount}
     />
-  );
-}
-
-export default function DashboardPage() {
-  return (
-    <Suspense fallback={<DashboardLoading />}>
-      <DashboardContent />
-    </Suspense>
   );
 }
