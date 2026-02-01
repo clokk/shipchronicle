@@ -19,6 +19,13 @@ interface HeaderProps {
   totalCount?: number;
   selectedProject?: string | null;
   onSelectProject?: (project: string | null) => void;
+  // Web dashboard auth props (optional - not used in local dashboard)
+  user?: {
+    userName: string;
+    avatarUrl?: string;
+  };
+  homeHref?: string;
+  settingsHref?: string;
 }
 
 export default function Header({
@@ -29,13 +36,21 @@ export default function Header({
   totalCount,
   selectedProject,
   onSelectProject,
+  user,
+  homeHref,
+  settingsHref,
 }: HeaderProps) {
   return (
     <header className="bg-bg border-b border-border px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
+          {homeHref && (
+            <a href={homeHref} className="text-xl font-bold text-primary hover:text-chronicle-blue transition-colors">
+              CogCommit
+            </a>
+          )}
           <h1 className="text-xl font-semibold text-chronicle-blue">
-            Studio: {projectName}
+            {homeHref ? projectName : `Studio: ${projectName}`}
           </h1>
 
           {/* Project filter dropdown (global mode only) */}
@@ -68,6 +83,29 @@ export default function Header({
             </div>
           )}
         </div>
+
+        {/* User section (web dashboard only) */}
+        {user && (
+          <div className="flex items-center gap-4">
+            <a
+              href={settingsHref || "/dashboard/settings"}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              {user.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.userName}
+                  className="w-8 h-8 rounded-full"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-panel flex items-center justify-center text-sm font-medium text-primary">
+                  {user.userName[0]?.toUpperCase() || "U"}
+                </div>
+              )}
+              <span className="text-primary font-medium">{user.userName}</span>
+            </a>
+          </div>
+        )}
       </div>
     </header>
   );

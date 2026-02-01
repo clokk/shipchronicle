@@ -20,6 +20,8 @@ export default async function DashboardPage() {
     user?.email?.split("@")[0] ||
     "User";
 
+  const avatarUrl = user?.user_metadata?.avatar_url;
+
   // Inline query with explicit relationship aliases
   const { data: rawCommits, error } = await supabase
     .from("cognitive_commits")
@@ -65,6 +67,7 @@ export default async function DashboardPage() {
     <DashboardView
       commits={commits}
       userName={userName}
+      avatarUrl={avatarUrl}
       projects={projects}
       totalCount={totalCount}
     />

@@ -18,6 +18,7 @@ interface ProjectListItem {
 interface DashboardViewProps {
   commits: CognitiveCommit[];
   userName: string;
+  avatarUrl?: string;
   projects: ProjectListItem[];
   totalCount: number;
 }
@@ -35,6 +36,7 @@ const COLLAPSED_WIDTH = 48;
 export default function DashboardView({
   commits: initialCommits,
   userName,
+  avatarUrl,
   projects,
   totalCount,
 }: DashboardViewProps) {
@@ -107,13 +109,16 @@ export default function DashboardView({
     <div className="h-screen flex flex-col overflow-hidden bg-bg">
       {/* Header */}
       <Header
-        projectName="CogCommit Cloud"
+        projectName="Cloud"
         isGlobal={true}
         stats={{ commitCount: commits.length, totalTurns }}
         projects={projects}
         totalCount={totalCount}
         selectedProject={selectedProject}
         onSelectProject={handleSelectProject}
+        homeHref="/"
+        user={{ userName, avatarUrl }}
+        settingsHref="/dashboard/settings"
       />
 
       <div className="flex flex-1 overflow-hidden" style={{ minHeight: 0 }}>
