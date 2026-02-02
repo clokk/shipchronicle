@@ -274,6 +274,7 @@ export interface DbCommit {
   version: number;
   updated_at: string;
   deleted_at: string | null;
+  prompt_count: number | null;
 }
 
 /** Raw database row for sessions table */

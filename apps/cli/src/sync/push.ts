@@ -244,6 +244,12 @@ async function pushCommit(
   // Auto-generate title from first user message if not set
   const title = generateCommitTitle(commit);
 
+  // Calculate prompt_count (user prompts only)
+  const promptCount = commit.sessions.reduce(
+    (sum, session) => sum + session.turns.filter(t => t.role === 'user').length,
+    0
+  );
+
   const { data, error } = await supabase
     .from("cognitive_commits")
     .upsert(
@@ -264,6 +270,7 @@ async function pushCommit(
         hidden: commit.hidden || false,
         display_order: commit.displayOrder || 0,
         title,
+        prompt_count: promptCount,
         version: (commit.cloudVersion || 0) + 1,
         updated_at: new Date().toISOString(),
       },

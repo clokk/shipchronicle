@@ -86,7 +86,7 @@ export default function Header({
           {stats && (
             <div className="flex items-center gap-4 text-sm text-muted">
               <span>{stats.commitCount} commits</span>
-              <span>{stats.totalTurns} turns</span>
+              <span>{stats.totalTurns} prompts</span>
             </div>
           )}
         </div>

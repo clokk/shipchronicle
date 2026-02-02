@@ -58,7 +58,7 @@ type RenderItem =
  * - Turn-by-turn conversation display with time gap dividers
  * - Tool call grouping
  * - Search with highlighting and navigation
- * - Keyboard navigation (j/k for turns, J/K for user-only)
+ * - Keyboard navigation (j/k for prompts, J/K for user-only)
  * - Font size controls
  * - Export (markdown, plain text, clipboard)
  * - Optional: editable title, delete button
@@ -428,7 +428,7 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
 
             {/* Stats */}
             <span className="text-subtle">·</span>
-            <span className="text-muted">{turnCount} turns</span>
+            <span className="text-muted">{turnCount} prompts</span>
             <span className="text-subtle">·</span>
             {commit.filesChanged.length > 0 ? (
               <button
@@ -705,7 +705,7 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
           </div>
 
           <span className="text-xs text-subtle">
-            j/k: turns · J/K: user only · /: search
+            j/k: prompts · J/K: user only · /: search
           </span>
         </div>
 

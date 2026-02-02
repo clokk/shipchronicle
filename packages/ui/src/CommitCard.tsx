@@ -103,7 +103,7 @@ export default function CommitCard({
 
         {/* Stats */}
         <div className="flex items-center gap-3 mt-1 text-xs text-muted">
-          <span>{turnCount} turns</span>
+          <span>{turnCount} prompts</span>
           <span>
             {sessionCount} session
             {sessionCount !== 1 ? "s" : ""}

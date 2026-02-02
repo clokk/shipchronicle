@@ -104,12 +104,15 @@ export function transformCommitWithRelations(
 
   const commit = transformCommit(db, sessions);
 
-  // Compute turnCount from sessions (user prompts only)
-  // A "turn" = one user prompt → Claude's complete response cycle
-  commit.turnCount = sessions.reduce(
-    (sum, s) => sum + s.turns.filter((t) => t.role === "user").length,
-    0
-  );
+  // Use stored prompt_count if available, fallback to calculation for old data
+  if (db.prompt_count != null) {
+    commit.turnCount = db.prompt_count;
+  } else {
+    commit.turnCount = sessions.reduce(
+      (sum, s) => sum + s.turns.filter((t) => t.role === "user").length,
+      0
+    );
+  }
 
   return commit;
 }

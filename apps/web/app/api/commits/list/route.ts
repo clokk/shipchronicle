@@ -13,18 +13,8 @@ interface DbCommitListRow {
   hidden: boolean;
   project_name: string | null;
   source: string;
-  sessions: { id: string; turns: { id: string; role: string }[] }[];
-}
-
-/**
- * Count meaningful turns (user prompts only)
- * A "turn" = one user prompt → Claude's complete response cycle
- */
-function countUserTurns(sessions: { turns: { role: string }[] }[]): number {
-  return sessions.reduce(
-    (sum, s) => sum + s.turns.filter((t) => t.role === "user").length,
-    0
-  );
+  prompt_count: number | null;
+  sessions: { id: string }[];
 }
 
 export async function GET(request: Request) {
@@ -42,14 +32,14 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Fetch only summary fields + minimal session/turn data for counts
+    // Fetch summary fields + prompt_count directly (no need to fetch turns)
     let query = supabase
       .from("cognitive_commits")
       .select(
         `
         id, git_hash, started_at, closed_at, closed_by,
-        title, project_name, source, parallel, hidden,
-        sessions!inner (id, turns (id, role))
+        title, project_name, source, parallel, hidden, prompt_count,
+        sessions!inner (id)
       `
       )
       .eq("user_id", user.id)
@@ -73,7 +63,7 @@ export async function GET(request: Request) {
 
     for (const raw of (rawCommits as DbCommitListRow[]) || []) {
       const sessionCount = raw.sessions?.length || 0;
-      const turnCount = raw.sessions ? countUserTurns(raw.sessions) : 0;
+      const turnCount = raw.prompt_count || 0;
 
       // Filter out 0-turn commits
       if (turnCount === 0) continue;

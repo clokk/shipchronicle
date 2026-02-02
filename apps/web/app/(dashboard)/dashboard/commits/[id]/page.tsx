@@ -89,7 +89,7 @@ export default async function CommitDetailPage({
           )}
 
           <span className="text-subtle">|</span>
-          <span className="text-muted">{turnCount} turns</span>
+          <span className="text-muted">{turnCount} prompts</span>
           <span className="text-subtle">|</span>
           <span className="text-muted">
             {transformedCommit.filesChanged.length} files changed

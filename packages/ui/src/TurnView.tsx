@@ -108,7 +108,7 @@ const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
           <button
             onClick={handleCopy}
             className="ml-auto p-1 text-muted hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
-            title="Copy turn"
+            title="Copy prompt"
           >
             {copied ? (
               <svg

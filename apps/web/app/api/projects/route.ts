@@ -4,17 +4,7 @@ import { NextResponse } from "next/server";
 interface DbCommitMinimal {
   id: string;
   project_name: string | null;
-  sessions?: { turns?: { role: string }[] }[];
-}
-
-/**
- * Count meaningful turns (user prompts only)
- */
-function countUserTurns(sessions: { turns?: { role: string }[] }[]): number {
-  return sessions.reduce(
-    (sum, s) => sum + (s.turns?.filter((t) => t.role === "user").length || 0),
-    0
-  );
+  prompt_count: number | null;
 }
 
 export async function GET() {
@@ -29,16 +19,10 @@ export async function GET() {
   }
 
   try {
-    // Fetch only id and project_name - minimal data for counting
-    // Also fetch session count to filter out 0-turn commits
+    // Fetch only id, project_name, and prompt_count - minimal data for counting
     const { data: rawCommits, error } = await supabase
       .from("cognitive_commits")
-      .select(
-        `
-        id, project_name,
-        sessions!inner (id, turns (id, role))
-      `
-      )
+      .select(`id, project_name, prompt_count`)
       .eq("user_id", user.id)
       .is("deleted_at", null)
       .eq("hidden", false);
@@ -52,17 +36,13 @@ export async function GET() {
     const projectCounts = new Map<string, number>();
     let totalCount = 0;
 
-    for (const commit of rawCommits || []) {
-      // Calculate turn count to filter 0-turn commits (user prompts only)
-      const typedCommit = commit as DbCommitMinimal;
-      const turnCount = typedCommit.sessions ? countUserTurns(typedCommit.sessions) : 0;
-
-      if (turnCount === 0) continue;
+    for (const commit of (rawCommits as DbCommitMinimal[]) || []) {
+      // Filter out 0-turn commits using stored prompt_count
+      if (!commit.prompt_count || commit.prompt_count === 0) continue;
 
       totalCount++;
-      const projectName = (commit as DbCommitMinimal).project_name;
-      if (projectName) {
-        projectCounts.set(projectName, (projectCounts.get(projectName) || 0) + 1);
+      if (commit.project_name) {
+        projectCounts.set(commit.project_name, (projectCounts.get(commit.project_name) || 0) + 1);
       }
     }
 

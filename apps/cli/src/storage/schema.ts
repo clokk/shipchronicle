@@ -2,7 +2,7 @@
  * SQLite schema definitions for CogCommit
  */
 
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 export const CREATE_TABLES = `
 -- Cognitive commits (persisted)
@@ -136,6 +136,10 @@ export const MIGRATIONS: { version: number; sql: string }[] = [
       CREATE INDEX IF NOT EXISTS idx_turns_sync_status ON turns(sync_status);
       CREATE INDEX IF NOT EXISTS idx_visuals_sync_status ON visuals(sync_status);
     `,
+  },
+  {
+    version: 7,
+    sql: `ALTER TABLE cognitive_commits ADD COLUMN prompt_count INTEGER DEFAULT 0;`,
   },
 ];
 
