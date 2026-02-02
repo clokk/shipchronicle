@@ -179,11 +179,11 @@ Both dashboards use the shared transform from `@cogcommit/supabase`:
 import { transformCommitWithRelations } from "@cogcommit/supabase";
 
 // Converts DB format (snake_case) to frontend format (camelCase)
-// Also computes turnCount from sessions/turns
+// Also sets turnCount from stored prompt_count
 const commits = rawData.map(transformCommitWithRelations);
 ```
 
-**Important**: The `turnCount` is computed, not stored. The transform function calculates it from `sessions.reduce((sum, s) => sum + s.turns.length, 0)`.
+**Important**: The `turnCount` uses the stored `prompt_count` column (user prompts only). If `prompt_count` is null (old data), it falls back to computing from sessions.
 
 ## Testing Changes
 

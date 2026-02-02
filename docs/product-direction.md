@@ -64,9 +64,9 @@ Focus on commit-level metrics first. Simple, already have the data.
 
 | Metric | Implementation | Value |
 |--------|----------------|-------|
-| **Turns per cognitive commit** | Count turns in each commit | Shows iteration patterns |
+| **Prompts per cognitive commit** | Count prompts in each commit | Shows iteration patterns |
 | **Simple sentiment detection** | Keyword matching for approval/rejection | Flags struggles |
-| **Dashboard summary** | "This week: 12 commits, avg 4.2 turns, 2 rejections" | The "reason to open" |
+| **Dashboard summary** | "This week: 12 commits, avg 4.2 prompts, 2 rejections" | The "reason to open" |
 | **Per-commit indicators** | Visual badge: smooth vs struggled | At-a-glance understanding |
 
 **Skip for v1:**
@@ -78,7 +78,7 @@ Focus on commit-level metrics first. Simple, already have the data.
 
 | Metric | Why it matters |
 |--------|----------------|
-| **First-prompt success rate** | % of tasks resolved in 1-2 turns |
+| **First-prompt success rate** | % of tasks resolved in 1-2 prompts |
 | **Rejection/correction frequency** | Learn what prompts lead to mistakes |
 | **Task-level iteration count** | More granular than commit-level |
 | **Tool call patterns** | Heavy reads = exploring, heavy edits = implementing |
@@ -247,7 +247,7 @@ profile_public: boolean DEFAULT true  -- show public commits on profile
 `cogcommit.com/@{username}` shows:
 - User info (name, avatar from GitHub)
 - List of all public commits
-- Total stats: "42 public commits, 1.2k turns shared"
+- Total stats: "42 public commits, 1.2k prompts shared"
 
 ### Future Enhancements
 
@@ -267,7 +267,7 @@ Every commit card should show at-a-glance metrics.
 
 ```
 ┌────────────────────────────────────────────────┐
-│ 🔒 Add authentication flow          12 turns  │
+│ 🔒 Add authentication flow         12 prompts │
 │ 45 min • 8 files • smooth                     │
 └────────────────────────────────────────────────┘
 ```
@@ -276,7 +276,7 @@ Every commit card should show at-a-glance metrics.
 
 | Metric | Source |
 |--------|--------|
-| **Turn count** | Count of turns in commit |
+| **Prompt count** | Count of prompts in commit |
 | **Duration** | `closed_at - started_at` |
 | **Files touched** | Count of unique files in tool calls |
 | **Sentiment** | "smooth" / "struggled" from keyword detection |

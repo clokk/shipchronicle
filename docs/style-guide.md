@@ -118,7 +118,7 @@
 <div className={`border-l-2 ${hasGitHash ? 'border-commit-closed' : 'border-commit-open'} pl-4 py-3`}>
   <div className="flex items-center gap-2 text-sm">
     <span className="font-mono text-commit-closed">[abc123]</span>
-    <span className="text-muted">12 turns</span>
+    <span className="text-muted">12 prompts</span>
   </div>
 </div>
 ```
@@ -176,7 +176,7 @@ Available sizes: 12, 14, 16, 18, 20px (default: 16px)
 The conversation header is condensed to 2 rows:
 
 ```
-Row 1: [project] [abc123] · 232 turns · 15 files  [/ search] [Delete]
+Row 1: [project] [abc123] · 232 prompts · 15 files  [/ search] [Delete]
 Row 2: Click to add title...
 ```
 
