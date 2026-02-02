@@ -12,6 +12,7 @@ import {
 } from "../config";
 import { CogCommitDB } from "../storage/db";
 import { parseProject } from "../parser/index";
+import { detectPrimaryProject } from "../utils/project";
 
 export function registerImportCommand(program: Command): void {
   program
@@ -21,6 +22,7 @@ export function registerImportCommand(program: Command): void {
     .option("-g, --global", "Import all Claude Code projects (default)")
     .option("-p, --project", "Import only current project (requires init)")
     .option("--clear", "Clear existing commits before importing")
+    .option("--redetect", "Re-run project detection on all existing commits")
     .action(async (options) => {
       try {
         let storagePath: string;
@@ -55,6 +57,47 @@ export function registerImportCommand(program: Command): void {
         // Open database (global mode is default, project mode uses rawStoragePath: false)
         const db = new CogCommitDB(storagePath, { rawStoragePath: !options.project });
 
+        // Handle --redetect: re-run project detection on existing commits
+        if (options.redetect) {
+          console.log("Re-detecting projects for existing commits...\n");
+
+          const allCommits = db.commits.getAll();
+          let updated = 0;
+          const changes: { id: string; oldProject: string; newProject: string }[] = [];
+
+          for (const commit of allCommits) {
+            const oldProject = commit.projectName || "unknown";
+            const newProject = detectPrimaryProject(
+              commit.filesRead,
+              commit.filesChanged,
+              oldProject
+            );
+
+            if (newProject !== oldProject) {
+              db.commits.updateProjectName(commit.id, newProject);
+              changes.push({ id: commit.id, oldProject, newProject });
+              updated++;
+            }
+          }
+
+          console.log("─".repeat(40));
+          console.log(`Scanned ${allCommits.length} commits`);
+          console.log(`Updated ${updated} project assignments\n`);
+
+          if (changes.length > 0) {
+            console.log("Changes:");
+            for (const change of changes.slice(0, 10)) {
+              console.log(`  ${change.oldProject} → ${change.newProject}`);
+            }
+            if (changes.length > 10) {
+              console.log(`  ... and ${changes.length - 10} more`);
+            }
+          }
+
+          db.close();
+          return;
+        }
+
         // Optionally clear existing commits
         if (options.clear) {
           console.log("Clearing existing commits...");
@@ -69,8 +112,8 @@ export function registerImportCommand(program: Command): void {
         let totalSkipped = 0;
 
         for (const claudePath of claudePaths) {
-          const projectName = getProjectNameFromClaudePath(claudePath);
-          console.log(`Importing: ${projectName}`);
+          const claudeProjectName = getProjectNameFromClaudePath(claudePath);
+          console.log(`Importing: ${claudeProjectName}`);
           console.log(`  Path: ${claudePath}`);
 
           // Parse the sessions
@@ -97,9 +140,13 @@ export function registerImportCommand(program: Command): void {
               continue;
             }
 
-            // Set project name for global mode (default)
+            // Detect primary project from file operations (global mode)
             if (!options.project) {
-              commit.projectName = projectName;
+              commit.projectName = detectPrimaryProject(
+                commit.filesRead,
+                commit.filesChanged,
+                claudeProjectName  // Fall back to Claude directory name
+              );
             }
 
             db.commits.insert(commit);

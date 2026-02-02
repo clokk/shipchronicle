@@ -178,6 +178,17 @@ export class CommitsRepository {
   }
 
   /**
+   * Update project name for a commit (for redetection)
+   */
+  updateProjectName(id: string, projectName: string): boolean {
+    const stmt = this.db.prepare(
+      "UPDATE cognitive_commits SET project_name = ? WHERE id = ?"
+    );
+    const result = stmt.run(projectName, id);
+    return result.changes > 0;
+  }
+
+  /**
    * Update a cognitive commit (for curation and sync)
    */
   update(
