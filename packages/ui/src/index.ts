@@ -16,6 +16,7 @@ export type { ConversationViewerProps } from "./ConversationViewer";
 export { SidebarHeader } from "./SidebarHeader";
 export { Shimmer } from "./Shimmer";
 export { UsageLimitBar } from "./UsageLimitBar";
+export { StatsPopover } from "./StatsPopover";
 
 // Hooks
 export { useResizable } from "./hooks/useResizable";

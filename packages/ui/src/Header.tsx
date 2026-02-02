@@ -2,6 +2,7 @@
 
 import React from "react";
 import { UsageLimitBar } from "./UsageLimitBar";
+import { StatsPopover } from "./StatsPopover";
 import type { UsageData, WeeklySummaryStats } from "@cogcommit/types";
 
 interface ProjectListItem {
@@ -71,7 +72,7 @@ export default function Header({
                 onChange={(e) => onSelectProject(e.target.value || null)}
                 className="appearance-none bg-panel border border-border rounded-lg px-3 py-1.5 pr-8 text-sm text-primary focus:border-chronicle-blue focus:outline-none cursor-pointer"
               >
-                <option value="">All Projects ({totalCount})</option>
+                <option value="">All Projects</option>
                 {projects.map((p) => (
                   <option key={p.name} value={p.name}>
                     {p.name} ({p.count})
@@ -86,24 +87,8 @@ export default function Header({
             </div>
           )}
 
-          {(stats || weeklySummary) && (
-            <div className="flex items-center gap-4 text-sm text-muted">
-              {stats && (
-                <>
-                  <span>{stats.commitCount} commits</span>
-                  <span>{stats.totalTurns} prompts</span>
-                </>
-              )}
-              {weeklySummary && weeklySummary.weeklyCommitCount > 0 && (
-                <>
-                  <span className="text-subtle">·</span>
-                  <span className="text-primary">This week:</span>
-                  <span>{weeklySummary.weeklyCommitCount} commits</span>
-                  <span>avg {weeklySummary.avgPromptsPerCommit.toFixed(1)} prompts</span>
-                </>
-              )}
-            </div>
-          )}
+          {/* Stats popover */}
+          <StatsPopover stats={stats} weeklySummary={weeklySummary} />
         </div>
 
         {/* Usage limits */}
@@ -111,6 +96,7 @@ export default function Header({
           <UsageLimitBar
             usage={usage}
             loading={usageLoading}
+            minimal={!!user}
             compact={!user}
             upgradeHref={user ? "/dashboard/settings" : undefined}
           />

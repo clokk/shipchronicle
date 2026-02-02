@@ -7,6 +7,8 @@ interface UsageLimitBarProps {
   usage: UsageData | null;
   loading?: boolean;
   compact?: boolean;
+  /** Minimal mode: single 16px bar with tooltip showing breakdown */
+  minimal?: boolean;
   upgradeHref?: string;
 }
 
@@ -22,7 +24,7 @@ function getBarColor(pct: number): string {
   return "bg-chronicle-blue";
 }
 
-export function UsageLimitBar({ usage, loading, compact, upgradeHref }: UsageLimitBarProps) {
+export function UsageLimitBar({ usage, loading, compact, minimal, upgradeHref }: UsageLimitBarProps) {
   if (loading) {
     return (
       <div className="flex items-center gap-2 animate-pulse">
@@ -37,9 +39,32 @@ export function UsageLimitBar({ usage, loading, compact, upgradeHref }: UsageLim
   const commitPct = Math.min((usage.commitCount / usage.commitLimit) * 100, 100);
   const storagePct = Math.min((usage.storageUsedBytes / usage.storageLimitBytes) * 100, 100);
   const showUpgrade = (commitPct >= 80 || storagePct >= 80) && usage.tier === "free";
+  const higherPct = Math.max(commitPct, storagePct);
+
+  // Minimal mode: single narrow bar with tooltip
+  if (minimal) {
+    return (
+      <div className="flex items-center gap-2">
+        <div
+          className="w-4 h-4 bg-subtle/30 rounded overflow-hidden flex items-end"
+          title={`Commits: ${usage.commitCount}/${usage.commitLimit} · Storage: ${formatBytes(usage.storageUsedBytes)}/${formatBytes(usage.storageLimitBytes)}`}
+        >
+          <div
+            className={`w-full ${getBarColor(higherPct)}`}
+            style={{ height: `${higherPct}%` }}
+          />
+        </div>
+        <span className="text-xs text-muted">{Math.round(higherPct)}%</span>
+        {showUpgrade && upgradeHref && (
+          <a href={upgradeHref} className="text-xs text-chronicle-blue hover:underline">
+            Upgrade
+          </a>
+        )}
+      </div>
+    );
+  }
 
   if (compact) {
-    const higherPct = Math.max(commitPct, storagePct);
     return (
       <div
         className="flex items-center gap-2"
