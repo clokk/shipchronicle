@@ -5,7 +5,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CognitiveCommit, DbCommit, DbSession, DbTurn, UsageData, QuotaTier } from "@cogcommit/types";
 import { FREE_TIER_LIMITS } from "@cogcommit/types";
-import { nanoid } from "nanoid";
 import {
   transformCommit,
   transformSession,
@@ -13,6 +12,16 @@ import {
   type DbCommitWithRelations,
   transformCommitWithRelations,
 } from "./transforms";
+
+/**
+ * Generate a URL-safe random slug (8 characters)
+ * Uses crypto.randomUUID() and takes first 8 chars for simplicity
+ */
+function generateSlug(): string {
+  // Use crypto.randomUUID and extract alphanumeric chars
+  const uuid = crypto.randomUUID().replace(/-/g, '');
+  return uuid.slice(0, 8);
+}
 
 /**
  * Options for fetching commits
@@ -393,7 +402,7 @@ export async function publishCommit(
   }
 
   // Use existing slug or generate new one (8 chars, URL-safe)
-  const slug = existing?.public_slug || nanoid(8);
+  const slug = existing?.public_slug || generateSlug();
 
   // Update the commit
   const { error: updateError } = await client
