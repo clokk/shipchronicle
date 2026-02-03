@@ -63,7 +63,10 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute =
     request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/callback");
-  const isPublicRoute = request.nextUrl.pathname.startsWith("/c/");
+  const isPublicRoute =
+    request.nextUrl.pathname.startsWith("/c/") ||
+    request.nextUrl.pathname.startsWith("/u/") ||
+    request.nextUrl.pathname.startsWith("/embed/");
 
   // Public routes don't need any auth checks
   if (isPublicRoute) {

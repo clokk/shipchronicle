@@ -74,6 +74,29 @@ Commits can be published to make them publicly accessible via shareable links:
 - **Slug persistence**: Unpublishing preserves the slug, so re-publishing restores the same URL
 - **Author info**: Public pages show author username (falls back to "Anonymous" if RLS blocks)
 
+### Public Profiles
+
+Users with public commits have public profile pages:
+
+- **URL format**: `/u/[username]` (e.g., `/u/octocat`)
+- **Content**: Avatar, username, public commit count, and grid of public commits
+- **Visibility**: Profile only visible if user has at least one public commit
+- **Navigation**: Author names on public commits link to their profile
+
+### Embed Widgets
+
+Published commits can be embedded on external sites:
+
+- **Embed URL**: `/embed/[slug]?view=card&theme=dark`
+- **View types**:
+  - `card` (200px) — Title, stats, author
+  - `summary` (120px) — Compact preview
+  - `full` (configurable) — Scrollable conversation
+- **Themes**: `dark`, `light`, `auto`
+- **Options**: `height` (for full view), `showAuthor` (true/false)
+- **oEmbed**: `/api/oembed?url=...` for Notion, Medium, etc.
+- **Script embed**: Include `embed.js` with `data-*` attributes
+
 ### Storage Paths
 
 - **Local database**: `~/.cogcommit/global/data.db` — all projects in one SQLite DB
@@ -117,9 +140,20 @@ Commits can be published to make them publicly accessible via shareable links:
 | `apps/web/app/c/[slug]/page.tsx` | Public commit viewer page |
 | `apps/web/app/c/[slug]/opengraph-image.tsx` | Dynamic OG image for social sharing |
 | `apps/web/app/c/[slug]/twitter-image.tsx` | Dynamic Twitter image (2:1 ratio) |
+| `apps/web/app/u/[username]/page.tsx` | Public user profile page |
+| `apps/web/app/u/[username]/opengraph-image.tsx` | Dynamic OG image for profiles |
+| `apps/web/app/u/[username]/twitter-image.tsx` | Dynamic Twitter image for profiles |
+| `apps/web/app/embed/[slug]/page.tsx` | Embeddable commit view |
+| `apps/web/app/embed/[slug]/EmbedCardView.tsx` | Card embed component (200px) |
+| `apps/web/app/embed/[slug]/EmbedSummaryView.tsx` | Summary embed component (120px) |
+| `apps/web/app/embed/[slug]/EmbedFullView.tsx` | Full embed component (scrollable) |
+| `apps/web/app/api/oembed/route.ts` | oEmbed endpoint for external platforms |
 | `apps/web/app/api/commits/[id]/publish/route.ts` | Publish commit API endpoint |
 | `apps/web/app/api/commits/[id]/unpublish/route.ts` | Unpublish commit API endpoint |
 | `apps/web/app/api/public/commits/[slug]/route.ts` | Public commit fetch API (no auth) |
+| `apps/web/app/api/public/users/[username]/route.ts` | Public profile fetch API (no auth) |
+| `apps/web/public/embed.js` | Script-based embed loader |
+| `packages/ui/src/EmbedCodeModal.tsx` | Embed code generator modal |
 
 ---
 

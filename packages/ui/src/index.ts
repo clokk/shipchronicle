@@ -18,6 +18,8 @@ export { Shimmer } from "./Shimmer";
 export { UsageLimitBar } from "./UsageLimitBar";
 export { UsagePopover } from "./UsagePopover";
 export { StatsPopover } from "./StatsPopover";
+export { EmbedCodeModal } from "./EmbedCodeModal";
+export type { EmbedCodeModalProps } from "./EmbedCodeModal";
 
 // Hooks
 export { useResizable } from "./hooks/useResizable";

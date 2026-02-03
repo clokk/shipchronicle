@@ -461,6 +461,107 @@ export interface PublicCommitResult {
 }
 
 /**
+ * Result type for public profile fetch
+ */
+export interface PublicProfileResult {
+  profile: {
+    username: string;
+    avatarUrl?: string;
+  };
+  commits: CognitiveCommit[];
+  stats: {
+    publicCommitCount: number;
+    totalPrompts: number;
+  };
+}
+
+/**
+ * Fetch a public user profile by username (no auth required)
+ * Returns null if user not found or has no public commits
+ */
+export async function getPublicProfile(
+  client: SupabaseClient,
+  username: string,
+  options: { limit?: number; offset?: number } = {}
+): Promise<PublicProfileResult | null> {
+  const { limit = 20, offset = 0 } = options;
+
+  // First, find user by username
+  const { data: profile, error: profileError } = await client
+    .from("user_profiles")
+    .select("id, github_username, github_avatar_url")
+    .eq("github_username", username)
+    .single();
+
+  if (profileError || !profile) {
+    return null;
+  }
+
+  // Fetch public commits for this user
+  const { data: commits, error: commitsError } = await client
+    .from("cognitive_commits")
+    .select(
+      `
+      *,
+      sessions (
+        *,
+        turns (*)
+      )
+    `
+    )
+    .eq("user_id", profile.id)
+    .eq("published", true)
+    .is("deleted_at", null)
+    .order("closed_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (commitsError) {
+    throw new Error(`Failed to fetch public commits: ${commitsError.message}`);
+  }
+
+  // If no public commits, return null (profile should not be visible)
+  if (!commits || commits.length === 0) {
+    // Check if there are ANY public commits (for pagination edge case)
+    const { count } = await client
+      .from("cognitive_commits")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", profile.id)
+      .eq("published", true)
+      .is("deleted_at", null);
+
+    if (!count || count === 0) {
+      return null;
+    }
+  }
+
+  // Get total public commit count and prompt count
+  const { count: publicCommitCount } = await client
+    .from("cognitive_commits")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", profile.id)
+    .eq("published", true)
+    .is("deleted_at", null);
+
+  // Calculate total prompts across all public commits
+  const totalPrompts = (commits || []).reduce((sum, commit) => {
+    const sessions = (commit as DbCommitWithRelations).sessions || [];
+    return sum + sessions.reduce((s, sess) => s + (sess.turns?.length || 0), 0);
+  }, 0);
+
+  return {
+    profile: {
+      username: profile.github_username,
+      avatarUrl: profile.github_avatar_url || undefined,
+    },
+    commits: (commits as DbCommitWithRelations[] || []).map(transformCommitWithRelations),
+    stats: {
+      publicCommitCount: publicCommitCount || 0,
+      totalPrompts,
+    },
+  };
+}
+
+/**
  * Fetch a public commit by its slug (no auth required)
  * Returns null if not found or not published
  */

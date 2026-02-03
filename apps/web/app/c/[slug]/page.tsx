@@ -73,19 +73,26 @@ export default async function PublicCommitPage({ params }: Props) {
             {/* Author info */}
             <div className="flex items-center gap-2 text-sm text-muted">
               <span>Shared by</span>
-              {author.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={author.avatarUrl}
-                  alt={author.username}
-                  className="w-6 h-6 rounded-full"
-                />
-              ) : (
-                <div className="w-6 h-6 rounded-full bg-panel flex items-center justify-center text-xs font-medium text-primary">
-                  {author.username[0]?.toUpperCase() || "U"}
-                </div>
-              )}
-              <span className="text-primary font-medium">{author.username}</span>
+              <Link
+                href={`/u/${author.username}`}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              >
+                {author.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={author.avatarUrl}
+                    alt={author.username}
+                    className="w-6 h-6 rounded-full"
+                  />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-panel flex items-center justify-center text-xs font-medium text-primary">
+                    {author.username[0]?.toUpperCase() || "U"}
+                  </div>
+                )}
+                <span className="text-primary font-medium hover:text-chronicle-blue transition-colors">
+                  {author.username}
+                </span>
+              </Link>
             </div>
 
             <Link

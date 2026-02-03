@@ -20,6 +20,7 @@ import {
   formatTimeRange,
   generateTitlePreview,
 } from "./utils/formatters";
+import { EmbedCodeModal } from "./EmbedCodeModal";
 
 export interface ConversationViewerProps {
   /** The commit to display */
@@ -82,6 +83,7 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
     const [showFilesModal, setShowFilesModal] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [exportCopied, setExportCopied] = useState(false);
+    const [showEmbedModal, setShowEmbedModal] = useState(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const publishMenuRef = useRef<HTMLDivElement>(null);
 
@@ -654,6 +656,15 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
                         >
                           Copy Link
                         </button>
+                        <button
+                          onClick={() => {
+                            setShowPublishMenu(false);
+                            setShowEmbedModal(true);
+                          }}
+                          className="block w-full text-left px-3 py-2 text-xs text-primary hover:bg-panel-alt transition-colors"
+                        >
+                          Get Embed Code
+                        </button>
                         {onUnpublish && (
                           <button
                             onClick={handleUnpublish}
@@ -935,6 +946,15 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
               </div>
             </div>
           </div>
+        )}
+
+        {/* Embed code modal */}
+        {showEmbedModal && commit.publicSlug && (
+          <EmbedCodeModal
+            slug={commit.publicSlug}
+            title={commit.title}
+            onClose={() => setShowEmbedModal(false)}
+          />
         )}
       </div>
     );
