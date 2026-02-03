@@ -20,6 +20,8 @@ export { UsagePopover } from "./UsagePopover";
 export { StatsPopover } from "./StatsPopover";
 export { EmbedCodeModal } from "./EmbedCodeModal";
 export type { EmbedCodeModalProps } from "./EmbedCodeModal";
+export { AnalyticsPopover } from "./AnalyticsPopover";
+export type { AnalyticsPopoverProps } from "./AnalyticsPopover";
 
 // Hooks
 export { useResizable } from "./hooks/useResizable";

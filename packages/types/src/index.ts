@@ -338,3 +338,29 @@ export interface WeeklySummaryStats {
   weeklyPromptCount: number;
   avgPromptsPerCommit: number;
 }
+
+// ============================================
+// Share Analytics Types
+// ============================================
+
+/** Referrer breakdown for analytics */
+export interface ReferrerStats {
+  domain: string;
+  count: number;
+}
+
+/** Device type breakdown for analytics */
+export interface DeviceStats {
+  type: "desktop" | "mobile" | "tablet";
+  count: number;
+}
+
+/** Analytics data for a published commit */
+export interface CommitAnalytics {
+  totalViews: number;
+  uniqueViewers: number;
+  viewsToday: number;
+  viewsThisWeek: number;
+  topReferrers: ReferrerStats[];
+  deviceBreakdown: DeviceStats[];
+}

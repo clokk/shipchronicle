@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback, useMemo, forwardRef } from "react";
-import type { CognitiveCommit, Turn } from "@cogcommit/types";
+import type { CognitiveCommit, Turn, CommitAnalytics } from "@cogcommit/types";
 import TurnView from "./TurnView";
 import ToolOnlyGroup from "./ToolOnlyGroup";
 import {
@@ -21,6 +21,7 @@ import {
   generateTitlePreview,
 } from "./utils/formatters";
 import { EmbedCodeModal } from "./EmbedCodeModal";
+import { AnalyticsPopover } from "./AnalyticsPopover";
 
 export interface ConversationViewerProps {
   /** The commit to display */
@@ -33,6 +34,8 @@ export interface ConversationViewerProps {
   onPublish?: () => Promise<{ slug: string; url: string }>;
   /** Called when unpublish is requested */
   onUnpublish?: () => Promise<void>;
+  /** Called to load analytics data for a commit */
+  onLoadAnalytics?: (commitId: string) => Promise<CommitAnalytics>;
   /** Read-only mode - hides all edit/delete/publish buttons */
   readOnly?: boolean;
 }
@@ -72,7 +75,7 @@ type RenderItem =
  * - Optional: editable title, delete button
  */
 export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerProps>(
-  function ConversationViewer({ commit, onTitleChange, onDelete, onPublish, onUnpublish, readOnly }, ref) {
+  function ConversationViewer({ commit, onTitleChange, onDelete, onPublish, onUnpublish, onLoadAnalytics, readOnly }, ref) {
     const [editingTitle, setEditingTitle] = useState(false);
     const [titleValue, setTitleValue] = useState(commit.title || "");
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -691,6 +694,14 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
                   </button>
                 )}
               </div>
+            )}
+
+            {/* Analytics popover - only show for published commits when onLoadAnalytics is provided */}
+            {commit.published && onLoadAnalytics && !readOnly && (
+              <AnalyticsPopover
+                commitId={commit.id}
+                onLoadAnalytics={onLoadAnalytics}
+              />
             )}
 
             {/* Delete button - only show if onDelete is provided and not readOnly */}

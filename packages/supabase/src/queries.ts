@@ -3,7 +3,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { CognitiveCommit, DbCommit, DbSession, DbTurn, UsageData, QuotaTier } from "@cogcommit/types";
+import type { CognitiveCommit, DbCommit, DbSession, DbTurn, UsageData, QuotaTier, CommitAnalytics, ReferrerStats, DeviceStats } from "@cogcommit/types";
 import { FREE_TIER_LIMITS } from "@cogcommit/types";
 import {
   transformCommit,
@@ -621,5 +621,155 @@ export async function getPublicCommit(
       username: authorUsername,
       avatarUrl: authorAvatarUrl,
     },
+  };
+}
+
+// ============================================
+// Share Analytics Functions
+// ============================================
+
+/**
+ * Record a view for a public commit
+ * Uses upsert with unique constraint (commit_id, visitor_hash, date) to limit one view per visitor per day
+ */
+export async function recordView(
+  client: SupabaseClient,
+  options: {
+    commitId: string;
+    visitorHash: string;
+    referrerDomain: string | null;
+    deviceType: "desktop" | "mobile" | "tablet";
+  }
+): Promise<void> {
+  const { commitId, visitorHash, referrerDomain, deviceType } = options;
+
+  // Use upsert - if a row with same commit_id, visitor_hash, and date exists,
+  // it will update (do nothing effectively since we're not changing values)
+  const { error } = await client
+    .from("commit_views")
+    .upsert(
+      {
+        commit_id: commitId,
+        visitor_hash: visitorHash,
+        referrer_domain: referrerDomain,
+        device_type: deviceType,
+      },
+      {
+        onConflict: "commit_id,visitor_hash,view_date",
+        ignoreDuplicates: true,
+      }
+    );
+
+  if (error) {
+    // Don't throw - view tracking should fail silently
+    console.error("Failed to record view:", error.message);
+  }
+}
+
+/**
+ * Get the commit ID from a public slug
+ * Used to lookup commits for view recording
+ */
+export async function getCommitIdBySlug(
+  client: SupabaseClient,
+  slug: string
+): Promise<string | null> {
+  const { data, error } = await client
+    .from("cognitive_commits")
+    .select("id")
+    .eq("public_slug", slug)
+    .eq("published", true)
+    .is("deleted_at", null)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data.id;
+}
+
+/**
+ * Get analytics for a commit
+ * Only accessible by commit owner (enforced by RLS)
+ */
+export async function getCommitAnalytics(
+  client: SupabaseClient,
+  commitId: string
+): Promise<CommitAnalytics> {
+  // Get all views for this commit
+  const { data: views, error } = await client
+    .from("commit_views")
+    .select("visitor_hash, referrer_domain, device_type, viewed_at")
+    .eq("commit_id", commitId);
+
+  if (error) {
+    throw new Error(`Failed to fetch analytics: ${error.message}`);
+  }
+
+  if (!views || views.length === 0) {
+    return {
+      totalViews: 0,
+      uniqueViewers: 0,
+      viewsToday: 0,
+      viewsThisWeek: 0,
+      topReferrers: [],
+      deviceBreakdown: [],
+    };
+  }
+
+  // Calculate date boundaries
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekStart = new Date(todayStart);
+  weekStart.setDate(weekStart.getDate() - 7);
+
+  // Total views
+  const totalViews = views.length;
+
+  // Unique viewers
+  const uniqueVisitors = new Set(views.map((v) => v.visitor_hash));
+  const uniqueViewers = uniqueVisitors.size;
+
+  // Views today
+  const viewsToday = views.filter((v) => {
+    const viewDate = new Date(v.viewed_at);
+    return viewDate >= todayStart;
+  }).length;
+
+  // Views this week
+  const viewsThisWeek = views.filter((v) => {
+    const viewDate = new Date(v.viewed_at);
+    return viewDate >= weekStart;
+  }).length;
+
+  // Top referrers
+  const referrerCounts = new Map<string, number>();
+  for (const view of views) {
+    const domain = view.referrer_domain || "direct";
+    referrerCounts.set(domain, (referrerCounts.get(domain) || 0) + 1);
+  }
+  const topReferrers: ReferrerStats[] = Array.from(referrerCounts.entries())
+    .map(([domain, count]) => ({ domain, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  // Device breakdown
+  const deviceCounts = new Map<string, number>();
+  for (const view of views) {
+    const type = view.device_type || "desktop";
+    deviceCounts.set(type, (deviceCounts.get(type) || 0) + 1);
+  }
+  const deviceBreakdown: DeviceStats[] = Array.from(deviceCounts.entries())
+    .map(([type, count]) => ({ type: type as DeviceStats["type"], count }))
+    .sort((a, b) => b.count - a.count);
+
+  return {
+    totalViews,
+    uniqueViewers,
+    viewsToday,
+    viewsThisWeek,
+    topReferrers,
+    deviceBreakdown,
   };
 }

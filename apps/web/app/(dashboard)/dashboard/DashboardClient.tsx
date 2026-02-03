@@ -11,7 +11,7 @@ import {
   SidebarHeader,
   Shimmer,
 } from "@cogcommit/ui";
-import { useCommitList, useCommitDetail, useUpdateCommitTitle, usePublishCommit, useUnpublishCommit, useProjects, useUsage } from "@/lib/hooks/useCommits";
+import { useCommitList, useCommitDetail, useUpdateCommitTitle, usePublishCommit, useUnpublishCommit, useProjects, useUsage, useCommitAnalytics } from "@/lib/hooks/useCommits";
 import { createClient } from "@/lib/supabase/client";
 
 interface DashboardClientProps {
@@ -113,6 +113,9 @@ export default function DashboardClient({
     if (!selectedCommitId) throw new Error("No commit selected");
     await unpublishMutation.mutateAsync(selectedCommitId);
   }, [selectedCommitId, unpublishMutation]);
+
+  // Analytics loading function
+  const loadAnalytics = useCommitAnalytics();
 
   // Handle project selection
   const handleSelectProject = useCallback((project: string | null) => {
@@ -360,6 +363,7 @@ export default function DashboardClient({
               onTitleChange={handleTitleChange}
               onPublish={handlePublish}
               onUnpublish={handleUnpublish}
+              onLoadAnalytics={loadAnalytics}
             />
           ) : (
             <div className="flex items-center justify-center h-full text-muted">

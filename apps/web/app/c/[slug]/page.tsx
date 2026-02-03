@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ConversationViewer } from "@cogcommit/ui";
 import type { Metadata } from "next";
 import PublicCommitHeader from "./PublicCommitHeader";
+import ViewTracker from "./ViewTracker";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -72,6 +73,9 @@ export default async function PublicCommitPage({ params }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col bg-bg">
+      {/* View tracker - records view on mount */}
+      <ViewTracker slug={slug} />
+
       {/* Navigation */}
       <PublicCommitHeader author={author} user={currentUser} />
 

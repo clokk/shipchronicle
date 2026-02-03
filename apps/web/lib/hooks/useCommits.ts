@@ -1,7 +1,8 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { CognitiveCommit, CommitListItem, UsageData, WeeklySummaryStats } from "@cogcommit/types";
+import type { CognitiveCommit, CommitListItem, UsageData, WeeklySummaryStats, CommitAnalytics } from "@cogcommit/types";
+import { useCallback } from "react";
 
 interface ProjectListItem {
   name: string;
@@ -361,6 +362,20 @@ export function useUsage() {
     },
     staleTime: 5 * 60 * 1000,
   });
+}
+
+/**
+ * Hook that returns a function to load analytics for a commit.
+ * Returns a stable callback that can be passed to ConversationViewer.
+ */
+export function useCommitAnalytics() {
+  return useCallback(async (commitId: string): Promise<CommitAnalytics> => {
+    const res = await fetch(`/api/commits/${commitId}/analytics`);
+    if (!res.ok) {
+      throw new Error("Failed to fetch analytics");
+    }
+    return res.json();
+  }, []);
 }
 
 // ============================================

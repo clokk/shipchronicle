@@ -97,6 +97,20 @@ Published commits can be embedded on external sites:
 - **oEmbed**: `/api/oembed?url=...` for Notion, Medium, etc.
 - **Script embed**: Include `embed.js` with `data-*` attributes
 
+### Share Analytics
+
+Published commits track view analytics:
+
+- **Privacy-conscious**: Hashes IP+User-Agent for uniqueness, no PII stored
+- **Rate limiting**: One view per visitor per day (unique constraint)
+- **Metrics tracked**:
+  - Total views / unique visitors
+  - Views today / this week
+  - Top referrer domains
+  - Device breakdown (desktop/mobile/tablet)
+- **Access control**: Only commit owner can view analytics (RLS enforced)
+- **UI**: Eye icon with view count in dashboard, popover shows full breakdown
+
 ### Storage Paths
 
 - **Local database**: `~/.cogcommit/global/data.db` — all projects in one SQLite DB
@@ -129,7 +143,7 @@ Published commits can be embedded on external sites:
 | `apps/cli/src/commands/prune.ts` | Delete old commits |
 | `apps/cli/src/studio/server.ts` | Local dashboard Hono server |
 | `apps/web/app/(dashboard)/` | Web platform dashboard pages |
-| `apps/web/components/DashboardClient.tsx` | Main dashboard component |
+| `apps/web/app/(dashboard)/dashboard/DashboardClient.tsx` | Main dashboard component |
 | `packages/types/src/index.ts` | Shared type definitions |
 | `packages/supabase/src/client.ts` | Supabase client factory |
 | `packages/supabase/src/transforms.ts` | DB ↔ frontend type transforms |
@@ -154,6 +168,10 @@ Published commits can be embedded on external sites:
 | `apps/web/app/api/public/users/[username]/route.ts` | Public profile fetch API (no auth) |
 | `apps/web/public/embed.js` | Script-based embed loader |
 | `packages/ui/src/EmbedCodeModal.tsx` | Embed code generator modal |
+| `apps/web/app/api/views/route.ts` | Record view API (POST, hashes IP+UA) |
+| `apps/web/app/api/commits/[id]/analytics/route.ts` | Get analytics API (authenticated) |
+| `apps/web/app/c/[slug]/ViewTracker.tsx` | Client component to record views |
+| `packages/ui/src/AnalyticsPopover.tsx` | Analytics display popover |
 
 ---
 
