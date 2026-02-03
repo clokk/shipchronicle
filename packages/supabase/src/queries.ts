@@ -468,6 +468,7 @@ export async function getPublicCommit(
   client: SupabaseClient,
   slug: string
 ): Promise<PublicCommitResult | null> {
+  // Fetch commit with sessions/turns (no user_profiles join - requires separate RLS)
   const { data, error } = await client
     .from("cognitive_commits")
     .select(
@@ -476,10 +477,6 @@ export async function getPublicCommit(
       sessions (
         *,
         turns (*)
-      ),
-      user_profiles!cognitive_commits_user_id_fkey (
-        github_username,
-        github_avatar_url
       )
     `
     )
@@ -500,14 +497,30 @@ export async function getPublicCommit(
     return null;
   }
 
-  // Extract user profile data
-  const userProfile = data.user_profiles as { github_username: string; github_avatar_url?: string } | null;
+  // Try to fetch author info separately (may fail due to RLS, that's ok)
+  let authorUsername = "Anonymous";
+  let authorAvatarUrl: string | undefined;
+
+  try {
+    const { data: profile } = await client
+      .from("user_profiles")
+      .select("github_username, github_avatar_url")
+      .eq("id", data.user_id)
+      .single();
+
+    if (profile) {
+      authorUsername = profile.github_username || "Anonymous";
+      authorAvatarUrl = profile.github_avatar_url || undefined;
+    }
+  } catch {
+    // RLS blocks access - use defaults
+  }
 
   return {
     commit: transformCommitWithRelations(data as DbCommitWithRelations),
     author: {
-      username: userProfile?.github_username || "Anonymous",
-      avatarUrl: userProfile?.github_avatar_url,
+      username: authorUsername,
+      avatarUrl: authorAvatarUrl,
     },
   };
 }
