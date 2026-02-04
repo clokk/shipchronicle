@@ -92,6 +92,9 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
 
     // Item navigation state
     const [currentItemIndex, setCurrentItemIndex] = useState(0);
+    const [navMode, setNavMode] = useState<"prompts" | "rejections" | "approvals">("prompts");
+    const [showNavModeMenu, setShowNavModeMenu] = useState(false);
+    const navModeMenuRef = useRef<HTMLDivElement>(null);
 
     // Flash highlight state - set when j/k navigates, fades out automatically
     const [highlightedItemIndex, setHighlightedItemIndex] = useState<number | null>(null);
@@ -128,6 +131,8 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
       setShowPublishMenu(false);
       setPublishedUrl(null);
       setLinkCopied(false);
+      setNavMode("prompts");
+      setShowNavModeMenu(false);
       if (highlightTimeoutRef.current) {
         clearTimeout(highlightTimeoutRef.current);
         highlightTimeoutRef.current = null;
@@ -208,6 +213,18 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [showPublishMenu]);
+
+    // Close nav mode menu when clicking outside
+    useEffect(() => {
+      if (!showNavModeMenu) return;
+      const handleClickOutside = (e: MouseEvent) => {
+        if (navModeMenuRef.current && !navModeMenuRef.current.contains(e.target as Node)) {
+          setShowNavModeMenu(false);
+        }
+      };
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [showNavModeMenu]);
 
     // Publish handler
     const handlePublish = async () => {
@@ -330,6 +347,43 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
       }
       return 0;
     }, [userPromptIndices, currentItemIndex]);
+
+    // Track position within rejections
+    const currentRejectionPosition = useMemo(() => {
+      for (let i = rejectionIndices.length - 1; i >= 0; i--) {
+        if (rejectionIndices[i] <= currentItemIndex) {
+          return i;
+        }
+      }
+      return 0;
+    }, [rejectionIndices, currentItemIndex]);
+
+    // Track position within approvals
+    const currentApprovalPosition = useMemo(() => {
+      for (let i = approvalIndices.length - 1; i >= 0; i--) {
+        if (approvalIndices[i] <= currentItemIndex) {
+          return i;
+        }
+      }
+      return 0;
+    }, [approvalIndices, currentItemIndex]);
+
+    // Get current indices and position based on nav mode
+    const currentModeIndices = useMemo(() => {
+      switch (navMode) {
+        case "rejections": return rejectionIndices;
+        case "approvals": return approvalIndices;
+        default: return userPromptIndices;
+      }
+    }, [navMode, userPromptIndices, rejectionIndices, approvalIndices]);
+
+    const currentModePosition = useMemo(() => {
+      switch (navMode) {
+        case "rejections": return currentRejectionPosition;
+        case "approvals": return currentApprovalPosition;
+        default: return currentPromptPosition;
+      }
+    }, [navMode, currentPromptPosition, currentRejectionPosition, currentApprovalPosition]);
 
     // Scroll to a specific item and flash highlight
     const scrollToItem = useCallback((index: number, flash: boolean = false) => {
@@ -457,6 +511,23 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
       }
     }, [approvalIndices, currentItemIndex, scrollToItem]);
 
+    // Unified navigation based on current mode
+    const goToNext = useCallback(() => {
+      if (currentModeIndices.length === 0) return;
+      const nextPos = currentModePosition + 1;
+      if (nextPos < currentModeIndices.length) {
+        scrollToItem(currentModeIndices[nextPos], true);
+      }
+    }, [currentModePosition, currentModeIndices, scrollToItem]);
+
+    const goToPrev = useCallback(() => {
+      if (currentModeIndices.length === 0) return;
+      const prevPos = currentModePosition - 1;
+      if (prevPos >= 0) {
+        scrollToItem(currentModeIndices[prevPos], true);
+      }
+    }, [currentModePosition, currentModeIndices, scrollToItem]);
+
     // Update current item based on scroll position
     useEffect(() => {
       const container = conversationRef.current;
@@ -506,24 +577,12 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
           return;
         }
 
-        if (e.key === "j" && !e.shiftKey) {
+        if (e.key === "j") {
           e.preventDefault();
-          goToNextItem();
-        } else if (e.key === "k" && !e.shiftKey) {
+          goToNext();
+        } else if (e.key === "k") {
           e.preventDefault();
-          goToPrevItem();
-        } else if (e.key === "J" && e.shiftKey) {
-          e.preventDefault();
-          goToNextRejection();
-        } else if (e.key === "K" && e.shiftKey) {
-          e.preventDefault();
-          goToPrevRejection();
-        } else if (e.key === "H" && e.shiftKey) {
-          e.preventDefault();
-          goToPrevApproval();
-        } else if (e.key === "L" && e.shiftKey) {
-          e.preventDefault();
-          goToNextApproval();
+          goToPrev();
         } else if (e.key === "/" && !e.metaKey && !e.ctrlKey) {
           e.preventDefault();
           const searchInput = document.querySelector<HTMLInputElement>('[data-search-input]');
@@ -533,7 +592,7 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
 
       window.addEventListener("keydown", handleKeyDown);
       return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [goToNextItem, goToPrevItem, goToNextRejection, goToPrevRejection, goToNextApproval, goToPrevApproval]);
+    }, [goToNext, goToPrev]);
 
     // Title save handler
     const handleSaveTitle = async () => {
@@ -891,73 +950,79 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
 
         {/* Navigation bar */}
         <div className="flex-shrink-0 px-6 py-3 border-t border-border bg-panel-alt flex items-center gap-4">
+          {/* Navigation controls */}
           <div className="flex items-center gap-2">
             <button
-              onClick={goToPrevItem}
-              disabled={currentPromptPosition === 0}
+              onClick={goToPrev}
+              disabled={currentModePosition === 0}
               className="text-muted hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              title="Previous prompt (k)"
+              title="Previous (k)"
             >
               ◀
             </button>
-            <span className="text-sm text-muted font-mono w-32 text-center">
-              {currentPromptPosition + 1} / {userPromptIndices.length}
+            <span className="text-sm text-muted font-mono w-20 text-center">
+              {currentModeIndices.length > 0 ? `${currentModePosition + 1} / ${currentModeIndices.length}` : "0 / 0"}
             </span>
             <button
-              onClick={goToNextItem}
-              disabled={currentPromptPosition >= userPromptIndices.length - 1}
+              onClick={goToNext}
+              disabled={currentModePosition >= currentModeIndices.length - 1}
               className="text-muted hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              title="Next prompt (j)"
+              title="Next (j)"
             >
               ▶
             </button>
           </div>
 
-          {/* Sentiment navigation */}
-          {(rejectionIndices.length > 0 || approvalIndices.length > 0) && (
-            <div className="flex items-center gap-3 border-l border-border pl-4">
-              {rejectionIndices.length > 0 && (
-                <div className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-red-500" title="Rejections" />
-                  <button
-                    onClick={goToPrevRejection}
-                    className="text-muted hover:text-red-400 transition-colors px-1"
-                    title="Previous rejection (Shift+K)"
-                  >
-                    ◀
-                  </button>
-                  <span className="text-xs text-muted font-mono">{rejectionIndices.length}</span>
-                  <button
-                    onClick={goToNextRejection}
-                    className="text-muted hover:text-red-400 transition-colors px-1"
-                    title="Next rejection (Shift+J)"
-                  >
-                    ▶
-                  </button>
-                </div>
+          {/* Mode switcher dropdown */}
+          <div className="relative" ref={navModeMenuRef}>
+            <button
+              onClick={() => setShowNavModeMenu(!showNavModeMenu)}
+              className="flex items-center gap-2 px-3 py-1 text-sm text-muted hover:text-primary bg-panel border border-border rounded transition-colors"
+            >
+              {navMode === "prompts" && "Prompts"}
+              {navMode === "rejections" && (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-red-500" />
+                  Rejections
+                </>
               )}
-              {approvalIndices.length > 0 && (
-                <div className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-chronicle-green" title="Approvals" />
-                  <button
-                    onClick={goToPrevApproval}
-                    className="text-muted hover:text-chronicle-green transition-colors px-1"
-                    title="Previous approval (Shift+H)"
-                  >
-                    ◀
-                  </button>
-                  <span className="text-xs text-muted font-mono">{approvalIndices.length}</span>
-                  <button
-                    onClick={goToNextApproval}
-                    className="text-muted hover:text-chronicle-green transition-colors px-1"
-                    title="Next approval (Shift+L)"
-                  >
-                    ▶
-                  </button>
-                </div>
+              {navMode === "approvals" && (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-chronicle-green" />
+                  Approvals
+                </>
               )}
-            </div>
-          )}
+              <span className="text-xs">▼</span>
+            </button>
+            {showNavModeMenu && (
+              <div className="absolute bottom-full left-0 mb-1 bg-panel border border-border rounded shadow-lg z-10 py-1 min-w-[160px]">
+                <button
+                  onClick={() => { setNavMode("prompts"); setShowNavModeMenu(false); }}
+                  className={`block w-full text-left px-3 py-2 text-sm transition-colors ${navMode === "prompts" ? "text-primary bg-panel-alt" : "text-muted hover:text-primary hover:bg-panel-alt"}`}
+                >
+                  Prompts ({userPromptIndices.length})
+                </button>
+                {rejectionIndices.length > 0 && (
+                  <button
+                    onClick={() => { setNavMode("rejections"); setShowNavModeMenu(false); }}
+                    className={`flex items-center gap-2 w-full text-left px-3 py-2 text-sm transition-colors ${navMode === "rejections" ? "text-primary bg-panel-alt" : "text-muted hover:text-primary hover:bg-panel-alt"}`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                    Rejections ({rejectionIndices.length})
+                  </button>
+                )}
+                {approvalIndices.length > 0 && (
+                  <button
+                    onClick={() => { setNavMode("approvals"); setShowNavModeMenu(false); }}
+                    className={`flex items-center gap-2 w-full text-left px-3 py-2 text-sm transition-colors ${navMode === "approvals" ? "text-primary bg-panel-alt" : "text-muted hover:text-primary hover:bg-panel-alt"}`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-chronicle-green" />
+                    Approvals ({approvalIndices.length})
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="flex-1" />
 
@@ -983,7 +1048,7 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
           </div>
 
           <span className="text-xs text-subtle">
-            j/k: prompts · J/K: rejections · H/L: approvals · /: search
+            j/k: navigate · /: search
           </span>
         </div>
 
