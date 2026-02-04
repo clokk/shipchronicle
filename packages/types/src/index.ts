@@ -20,6 +20,9 @@ export type ConversationSource =
 /** Sync status for cloud sync */
 export type SyncStatus = "pending" | "synced" | "conflict" | "error";
 
+/** Sentiment label for cognitive commits */
+export type SentimentLabel = "smooth" | "some-iteration" | "struggled";
+
 export interface ToolCall {
   id: string;
   name: string;
@@ -76,6 +79,10 @@ export interface CognitiveCommit {
   lastSyncedAt?: string;
   // UI convenience field (computed)
   turnCount?: number;
+  // Sentiment analysis fields
+  rejectionCount?: number;
+  approvalCount?: number;
+  sentimentLabel?: SentimentLabel;
 }
 
 /**
@@ -104,6 +111,10 @@ export interface CommitListItem {
   // Computed counts for display
   sessionCount: number;
   turnCount: number;
+  // Sentiment analysis fields
+  rejectionCount?: number;
+  approvalCount?: number;
+  sentimentLabel?: SentimentLabel;
 }
 
 export interface ParseResult {
@@ -285,6 +296,10 @@ export interface DbCommit {
   updated_at: string;
   deleted_at: string | null;
   prompt_count: number | null;
+  // Sentiment analysis fields
+  rejection_count: number | null;
+  approval_count: number | null;
+  sentiment_label: string | null;
 }
 
 /** Raw database row for sessions table */

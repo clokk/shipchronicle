@@ -25,8 +25,8 @@ export class CommitsRepository {
   insert(commit: CognitiveCommit): void {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO cognitive_commits
-      (id, git_hash, started_at, closed_at, closed_by, parallel, files_read, files_changed, published, hidden, display_order, title, project_name, source, cloud_id, sync_status, cloud_version, local_version, last_synced_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (id, git_hash, started_at, closed_at, closed_by, parallel, files_read, files_changed, published, hidden, display_order, title, project_name, source, cloud_id, sync_status, cloud_version, local_version, last_synced_at, rejection_count, approval_count, sentiment_label)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -48,7 +48,10 @@ export class CommitsRepository {
       commit.syncStatus || "pending",
       commit.cloudVersion || 0,
       commit.localVersion || 1,
-      commit.lastSyncedAt || null
+      commit.lastSyncedAt || null,
+      commit.rejectionCount ?? 0,
+      commit.approvalCount ?? 0,
+      commit.sentimentLabel || null
     );
 
     // Insert sessions
@@ -486,6 +489,10 @@ export class CommitsRepository {
       cloudVersion: row.cloud_version || 0,
       localVersion: row.local_version || 1,
       lastSyncedAt: row.last_synced_at || undefined,
+      // Sentiment analysis (v9)
+      rejectionCount: row.rejection_count ?? 0,
+      approvalCount: row.approval_count ?? 0,
+      sentimentLabel: (row.sentiment_label as CognitiveCommit["sentimentLabel"]) || undefined,
     };
   }
 }

@@ -9,6 +9,7 @@ import type { SyncResult } from "./types";
 import { v5 as uuidv5 } from "uuid";
 import { COGCOMMIT_UUID_NAMESPACE, SYNC_BATCH_SIZE } from "../constants";
 import { generateCommitTitle } from "../utils/title";
+import { analyzeSentiment } from "../parser/sentiment";
 import cliProgress from "cli-progress";
 import { getUserUsage } from "@cogcommit/supabase";
 
@@ -244,11 +245,14 @@ async function pushCommit(
   // Auto-generate title from first user message if not set
   const title = generateCommitTitle(commit);
 
+  // Collect all turns for analysis
+  const allTurns = commit.sessions.flatMap((session) => session.turns);
+
   // Calculate prompt_count (user prompts only)
-  const promptCount = commit.sessions.reduce(
-    (sum, session) => sum + session.turns.filter(t => t.role === 'user').length,
-    0
-  );
+  const promptCount = allTurns.filter((t) => t.role === "user").length;
+
+  // Analyze sentiment
+  const sentiment = analyzeSentiment(allTurns);
 
   const { data, error } = await supabase
     .from("cognitive_commits")
@@ -271,6 +275,9 @@ async function pushCommit(
         display_order: commit.displayOrder || 0,
         title,
         prompt_count: promptCount,
+        rejection_count: sentiment.rejectionCount,
+        approval_count: sentiment.approvalCount,
+        sentiment_label: sentiment.label,
         version: (commit.cloudVersion || 0) + 1,
         updated_at: new Date().toISOString(),
       },

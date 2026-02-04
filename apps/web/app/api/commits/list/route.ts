@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import type { CommitListItem, ClosedBy, ConversationSource } from "@cogcommit/types";
+import type { CommitListItem, ClosedBy, ConversationSource, SentimentLabel } from "@cogcommit/types";
 
 interface DbCommitListRow {
   id: string;
@@ -17,6 +17,9 @@ interface DbCommitListRow {
   project_name: string | null;
   source: string;
   prompt_count: number | null;
+  rejection_count: number | null;
+  approval_count: number | null;
+  sentiment_label: string | null;
   sessions: { id: string }[];
 }
 
@@ -43,6 +46,7 @@ export async function GET(request: Request) {
         id, git_hash, started_at, closed_at, closed_by,
         title, project_name, source, parallel, hidden, prompt_count,
         published, public_slug, published_at,
+        rejection_count, approval_count, sentiment_label,
         sessions!inner (id)
       `
       )
@@ -88,6 +92,9 @@ export async function GET(request: Request) {
         source: raw.source as ConversationSource,
         sessionCount,
         turnCount,
+        rejectionCount: raw.rejection_count ?? undefined,
+        approvalCount: raw.approval_count ?? undefined,
+        sentimentLabel: (raw.sentiment_label as SentimentLabel) ?? undefined,
       });
     }
 

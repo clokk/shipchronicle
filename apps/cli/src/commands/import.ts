@@ -11,7 +11,7 @@ import {
   getProjectNameFromClaudePath,
 } from "../config";
 import { CogCommitDB } from "../storage/db";
-import { parseProject } from "../parser/index";
+import { parseProject, analyzeSentiment } from "../parser/index";
 import { detectPrimaryProject } from "../utils/project";
 
 export function registerImportCommand(program: Command): void {
@@ -148,6 +148,13 @@ export function registerImportCommand(program: Command): void {
                 claudeProjectName  // Fall back to Claude directory name
               );
             }
+
+            // Calculate sentiment from turns
+            const allTurns = commit.sessions.flatMap((s) => s.turns);
+            const sentiment = analyzeSentiment(allTurns);
+            commit.rejectionCount = sentiment.rejectionCount;
+            commit.approvalCount = sentiment.approvalCount;
+            commit.sentimentLabel = sentiment.label;
 
             db.commits.insert(commit);
             imported++;

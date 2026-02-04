@@ -16,6 +16,9 @@ export type ConversationSource =
 /** Sync status for cloud sync */
 export type SyncStatus = "pending" | "synced" | "conflict" | "error";
 
+/** Sentiment label for cognitive commits */
+export type SentimentLabel = "smooth" | "some-iteration" | "struggled";
+
 export interface ToolCall {
   id: string;
   name: string;
@@ -67,6 +70,10 @@ export interface CognitiveCommit {
   cloudVersion?: number;
   localVersion?: number;
   lastSyncedAt?: string;
+  // Sentiment analysis (v9)
+  rejectionCount?: number;
+  approvalCount?: number;
+  sentimentLabel?: SentimentLabel;
 }
 
 export interface ParseResult {

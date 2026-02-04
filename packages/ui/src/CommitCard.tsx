@@ -1,8 +1,30 @@
 "use client";
 
 import React from "react";
-import type { CognitiveCommit, CommitListItem } from "@cogcommit/types";
+import type { CognitiveCommit, CommitListItem, SentimentLabel } from "@cogcommit/types";
 import { formatTime, getProjectColor } from "./utils/formatters";
+
+// Sentiment badge configuration
+const SENTIMENT_CONFIG: Record<
+  SentimentLabel,
+  { label: string; bg: string; text: string }
+> = {
+  smooth: {
+    label: "smooth",
+    bg: "bg-chronicle-green/20",
+    text: "text-chronicle-green",
+  },
+  "some-iteration": {
+    label: "some iteration",
+    bg: "bg-chronicle-amber/20",
+    text: "text-chronicle-amber",
+  },
+  struggled: {
+    label: "struggled",
+    bg: "bg-chronicle-red/20",
+    text: "text-chronicle-red",
+  },
+};
 
 // CommitCard accepts either full CognitiveCommit or lightweight CommitListItem
 type CommitData = CognitiveCommit | CommitListItem;
@@ -111,13 +133,35 @@ export default function CommitCard({
           {commit.title || getFirstUserMessage(commit) || "No content"}
         </div>
 
-        {/* Stats */}
-        <div className="flex items-center gap-3 mt-1 text-xs text-muted">
+        {/* Stats with sentiment */}
+        <div className="flex items-center gap-2 mt-1 text-xs text-muted flex-wrap">
           <span>{turnCount} prompts</span>
-          <span>
-            {sessionCount} session
-            {sessionCount !== 1 ? "s" : ""}
-          </span>
+          {commit.rejectionCount !== undefined && commit.rejectionCount > 0 && (
+            <>
+              <span className="text-subtle">·</span>
+              <span className="text-chronicle-red">
+                {commit.rejectionCount} rejection{commit.rejectionCount !== 1 ? "s" : ""}
+              </span>
+            </>
+          )}
+          {commit.approvalCount !== undefined && commit.approvalCount > 0 && (
+            <>
+              <span className="text-subtle">·</span>
+              <span className="text-chronicle-green">
+                {commit.approvalCount} approval{commit.approvalCount !== 1 ? "s" : ""}
+              </span>
+            </>
+          )}
+          {/* Sentiment badge */}
+          {commit.sentimentLabel && SENTIMENT_CONFIG[commit.sentimentLabel] && (
+            <span
+              className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                SENTIMENT_CONFIG[commit.sentimentLabel].bg
+              } ${SENTIMENT_CONFIG[commit.sentimentLabel].text}`}
+            >
+              {SENTIMENT_CONFIG[commit.sentimentLabel].label}
+            </span>
+          )}
         </div>
 
         {/* Time */}

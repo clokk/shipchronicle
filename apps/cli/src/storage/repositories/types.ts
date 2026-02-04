@@ -30,6 +30,10 @@ export interface CommitRow {
   cloud_version: number | null;
   local_version: number | null;
   last_synced_at: string | null;
+  // Sentiment analysis (v9)
+  rejection_count: number | null;
+  approval_count: number | null;
+  sentiment_label: string | null;
 }
 
 export interface SessionRow {

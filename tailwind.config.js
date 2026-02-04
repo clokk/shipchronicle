@@ -29,6 +29,7 @@ export default {
         "chronicle-green": "#5fb88e",
         "chronicle-amber": "#d4a030",
         "chronicle-purple": "#9d7cd8",
+        "chronicle-red": "#e05252",
       },
       fontFamily: {
         sans: ['"Source Serif 4"', "Georgia", "serif"],

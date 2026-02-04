@@ -14,6 +14,7 @@ import type {
   ClosedBy,
   ConversationSource,
   SyncStatus,
+  SentimentLabel,
 } from "@cogcommit/types";
 
 /**
@@ -46,6 +47,10 @@ export function transformCommit(
     cloudVersion: db.version,
     localVersion: db.version,
     lastSyncedAt: db.updated_at,
+    // Sentiment analysis
+    rejectionCount: db.rejection_count ?? undefined,
+    approvalCount: db.approval_count ?? undefined,
+    sentimentLabel: (db.sentiment_label as SentimentLabel) ?? undefined,
   };
 }
 

@@ -2,7 +2,7 @@
  * SQLite schema definitions for CogCommit
  */
 
-export const SCHEMA_VERSION = 8;
+export const SCHEMA_VERSION = 9;
 
 export const CREATE_TABLES = `
 -- Cognitive commits (persisted)
@@ -148,6 +148,15 @@ export const MIGRATIONS: { version: number; sql: string }[] = [
       ALTER TABLE cognitive_commits ADD COLUMN public_slug TEXT;
       ALTER TABLE cognitive_commits ADD COLUMN published_at TEXT;
       CREATE UNIQUE INDEX IF NOT EXISTS idx_commits_public_slug ON cognitive_commits(public_slug);
+    `,
+  },
+  {
+    version: 9,
+    sql: `
+      -- Sentiment analysis fields for cognitive_commits
+      ALTER TABLE cognitive_commits ADD COLUMN rejection_count INTEGER DEFAULT 0;
+      ALTER TABLE cognitive_commits ADD COLUMN approval_count INTEGER DEFAULT 0;
+      ALTER TABLE cognitive_commits ADD COLUMN sentiment_label TEXT;
     `,
   },
 ];
