@@ -58,8 +58,8 @@ export function registerInitCommand(program: Command): void {
         console.log(`  Capture enabled: ${config.captureEnabled}`);
         console.log(`\nStorage directory: ${getStorageDir(projectPath)}`);
         console.log(`\nNext steps:`);
-        console.log(`  1. Start your dev server`);
-        console.log(`  2. Run: tuhnr watch`);
+        console.log(`  Run: tuhnr start`);
+        console.log(`\n(Or use 'tuhnr watch' for advanced control)`);
       } catch (error) {
         console.error(`Error: ${(error as Error).message}`);
         process.exit(1);

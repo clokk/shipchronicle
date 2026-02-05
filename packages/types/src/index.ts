@@ -18,7 +18,7 @@ export type ConversationSource =
   | "opencode";
 
 /** Sync status for cloud sync */
-export type SyncStatus = "pending" | "synced" | "conflict" | "error";
+export type SyncStatus = "pending" | "synced" | "conflict" | "error" | "filtered";
 
 /** Sentiment label for cognitive commits */
 export type SentimentLabel = "smooth" | "some-iteration" | "struggled";
@@ -257,7 +257,9 @@ export interface SyncState {
   lastSyncAt: string | null;
   pendingCount: number;
   syncedCount: number;
+  filteredCount: number;
   conflictCount: number;
+  errorCount: number;
   isOnline: boolean;
   isSyncing: boolean;
 }

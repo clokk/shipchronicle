@@ -215,7 +215,9 @@ export class SyncQueue extends EventEmitter {
       lastSyncAt: this.db.daemonState.getLastSyncTime(),
       pendingCount: this.db.commits.getBySyncStatus("pending").length,
       syncedCount: this.db.commits.getBySyncStatus("synced").length,
+      filteredCount: this.db.commits.getBySyncStatus("filtered").length,
       conflictCount: this.db.commits.getBySyncStatus("conflict").length,
+      errorCount: this.db.commits.getBySyncStatus("error").length,
       isOnline: isAuthenticated(),
       isSyncing: this.isSyncing,
     };

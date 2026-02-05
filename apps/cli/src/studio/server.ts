@@ -11,6 +11,7 @@ import * as fs from "fs";
 import { createCommitRoutes } from "./routes/commits";
 import { createProjectRoutes } from "./routes/project";
 import { createUsageRoutes } from "./routes/usage";
+import { createSyncRoutes } from "./routes/sync";
 
 export interface ServerOptions {
   global?: boolean;
@@ -26,6 +27,7 @@ export function createApp(storagePath: string, options: ServerOptions = {}): Hon
   app.route("/api/project", createProjectRoutes(storagePath, options));
   app.route("/api/commits", createCommitRoutes(storagePath, options));
   app.route("/api/usage", createUsageRoutes());
+  app.route("/api/sync", createSyncRoutes(storagePath, options));
 
   // Serve static frontend files
   // In compiled mode, __dirname is dist/studio, but frontend is built to src/studio/frontend/dist

@@ -9,10 +9,10 @@
 // ============================================
 
 /** Batch size for uploading turns to cloud */
-export const SYNC_BATCH_SIZE = 100;
+export const SYNC_BATCH_SIZE = 200;
 
-/** Number of commits to push concurrently */
-export const SYNC_CONCURRENCY = 10;
+/** Number of parallel upload chunks */
+export const SYNC_CONCURRENCY = 12;
 
 /** UUID namespace for generating deterministic UUIDs */
 export const COGCOMMIT_UUID_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";

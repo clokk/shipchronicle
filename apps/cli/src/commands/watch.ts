@@ -17,6 +17,9 @@ import { TuhnrDB } from "../storage/db";
 import { TuhnrDaemon } from "../daemon";
 import { captureScreenshot } from "../daemon/capturer";
 import { getBestCaptureUrl } from "../utils/server-detect";
+import { getSyncQueue } from "../sync/queue";
+import { isAuthenticated, getCurrentUser } from "../sync/client";
+import { getSyncStatus } from "../sync";
 
 export function registerWatchCommands(program: Command): void {
   program
@@ -25,6 +28,7 @@ export function registerWatchCommands(program: Command): void {
     .option("-p, --port <port>", "Dev server port override", parseInt)
     .option("-v, --verbose", "Show verbose output")
     .option("--no-capture", "Disable screenshot capture")
+    .option("--no-sync", "Disable background cloud sync")
     .option("-f, --foreground", "Run in foreground (default is background)")
     .action(async (options) => {
       try {
@@ -46,9 +50,15 @@ export function registerWatchCommands(program: Command): void {
           // Run in foreground
           console.log("Starting daemon in foreground (Ctrl+C to stop)...\n");
 
+          // Set up sync queue if authenticated and sync enabled
+          const db = new TuhnrDB(projectPath);
+          const syncEnabled = isAuthenticated() && options.sync !== false;
+          const syncQueue = syncEnabled ? getSyncQueue(db, { continuousSync: true, verbose: options.verbose }) : undefined;
+
           const daemon = new TuhnrDaemon(projectPath, {
             verbose: options.verbose,
             captureEnabled: options.capture !== false,
+            syncQueue,
           });
 
           await daemon.start();
@@ -56,6 +66,9 @@ export function registerWatchCommands(program: Command): void {
           const status = daemon.getStatus();
           console.log(`Watching: ${status.claudeProjectPath}`);
           console.log(`Commits captured so far: ${status.commitCount}`);
+          if (syncEnabled) {
+            console.log("Background sync: enabled");
+          }
           console.log("\nListening for Claude Code sessions...");
 
           // Keep process alive
@@ -65,6 +78,7 @@ export function registerWatchCommands(program: Command): void {
           const args = ["watch", "--foreground"];
           if (options.verbose) args.push("--verbose");
           if (options.capture === false) args.push("--no-capture");
+          if (options.sync === false) args.push("--no-sync");
           if (options.port) args.push("--port", options.port.toString());
 
           const child = spawn(process.execPath, [process.argv[1], ...args], {
@@ -170,7 +184,6 @@ export function registerWatchCommands(program: Command): void {
         const db = new TuhnrDB(projectPath);
         const commitCount = db.commits.getCount();
         const lastActivity = db.daemonState.getLastActivity();
-        db.close();
 
         console.log(`\nStatistics:`);
         console.log(`  Commits captured: ${commitCount}`);
@@ -182,6 +195,35 @@ export function registerWatchCommands(program: Command): void {
         } else {
           console.log(`  Last activity: Never`);
         }
+
+        // Cloud Sync status
+        const user = getCurrentUser();
+        console.log(`\nCloud Sync:`);
+
+        if (!user) {
+          console.log("  Status: Not enabled");
+          console.log("  Run 'tuhnr start' to enable cloud insights");
+        } else {
+          const syncState = getSyncStatus(db);
+
+          if (user.isAnonymous) {
+            console.log(`  Account: Anonymous (run 'tuhnr claim' to link GitHub)`);
+          } else {
+            console.log(`  Account: ${user.githubUsername}`);
+          }
+
+          console.log(`  Last sync: ${syncState.lastSyncAt ? getTimeAgo(new Date(syncState.lastSyncAt)) : "Never"}`);
+          console.log(`  Synced: ${syncState.syncedCount} commits`);
+
+          if (syncState.pendingCount > 0) {
+            console.log(`  Pending: ${syncState.pendingCount} commits`);
+          }
+          if (syncState.errorCount > 0) {
+            console.log(`  Errors: ${syncState.errorCount} commits (run 'tuhnr push --retry')`);
+          }
+        }
+
+        db.close();
 
         console.log(`\nConfiguration:`);
         console.log(`  Claude path: ${config.claudeProjectPath}`);

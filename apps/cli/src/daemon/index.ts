@@ -15,10 +15,12 @@ import {
   type TuhnrConfig,
 } from "../config";
 import type { LogEntry } from "../parser/types";
+import type { SyncQueue } from "../sync/queue";
 
 export interface DaemonOptions {
   verbose?: boolean;
   captureEnabled?: boolean;
+  syncQueue?: SyncQueue;
 }
 
 export class TuhnrDaemon {
@@ -52,6 +54,7 @@ export class TuhnrDaemon {
       {
         verbose: options.verbose,
         captureOnCommit: captureEnabled,
+        syncQueue: options.syncQueue,
         onCommitClosed: (commit) => {
           if (options.verbose) {
             console.log(
@@ -126,6 +129,11 @@ export class TuhnrDaemon {
 
     // Force close any pending commit
     await this.processor.forceClose();
+
+    // Stop sync queue
+    if (this.options.syncQueue) {
+      this.options.syncQueue.stop();
+    }
 
     // Stop watcher
     if (this.watcher) {

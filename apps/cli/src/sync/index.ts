@@ -27,7 +27,14 @@ export {
 } from "./client";
 
 // Auth
-export { login, logout, refreshTokenIfNeeded } from "./auth";
+export {
+  login,
+  logout,
+  refreshTokenIfNeeded,
+  signInAnonymously,
+  ensureAuthenticated,
+  claimAccount,
+} from "./auth";
 
 // Push
 export { pushToCloud, pushVisuals } from "./push";
@@ -116,7 +123,9 @@ export function getSyncStatus(
     lastSyncAt: db.daemonState.getLastSyncTime(),
     pendingCount: db.commits.getBySyncStatus("pending").length,
     syncedCount: db.commits.getBySyncStatus("synced").length,
+    filteredCount: db.commits.getBySyncStatus("filtered").length,
     conflictCount: db.commits.getBySyncStatus("conflict").length,
+    errorCount: db.commits.getBySyncStatus("error").length,
     isOnline: checkAuth(),
     isSyncing: false,
   };

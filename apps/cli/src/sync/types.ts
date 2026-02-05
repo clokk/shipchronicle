@@ -2,7 +2,7 @@
  * Types for cloud sync functionality
  */
 
-export type SyncStatus = "pending" | "synced" | "conflict" | "error";
+export type SyncStatus = "pending" | "synced" | "conflict" | "error" | "filtered";
 
 export interface SyncMetadata {
   cloudId: string | null;
@@ -77,6 +77,7 @@ export interface UserProfile {
   githubUsername: string;
   githubId: string;
   analyticsOptIn: boolean;
+  isAnonymous?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -103,13 +104,19 @@ export interface SyncResult {
   pulled: number;
   conflicts: number;
   errors: string[];
+  /** Commits filtered out (warmup/empty) - not uploaded but marked synced locally */
+  filtered?: number;
+  /** Total pending before filtering */
+  totalPending?: number;
 }
 
 export interface SyncState {
   lastSyncAt: string | null;
   pendingCount: number;
   syncedCount: number;
+  filteredCount: number;
   conflictCount: number;
+  errorCount: number;
   isOnline: boolean;
   isSyncing: boolean;
 }
