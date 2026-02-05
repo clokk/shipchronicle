@@ -7,7 +7,7 @@ import { TuhnrDB } from "../storage/db";
 import type { CognitiveCommit } from "../models/types";
 import type { SyncResult } from "./types";
 import { v5 as uuidv5 } from "uuid";
-import { COGCOMMIT_UUID_NAMESPACE, SYNC_BATCH_SIZE, SYNC_CONCURRENCY } from "../constants";
+import { COGCOMMIT_UUID_NAMESPACE, SYNC_BATCH_SIZE } from "../constants";
 import { generateCommitTitle } from "../utils/title";
 import { analyzeSentiment } from "../parser/sentiment";
 import cliProgress from "cli-progress";
@@ -490,55 +490,40 @@ export async function pushToCloud(
         }
       }
 
-      // Prepare all batches upfront
-      const sessionBatches: Array<typeof sessionRecords> = [];
-      for (let s = 0; s < sessionRecords.length; s += SESSION_BATCH_SIZE) {
-        sessionBatches.push(sessionRecords.slice(s, s + SESSION_BATCH_SIZE));
-      }
-
-      // Throttled parallel upload helper with retry (max concurrent requests)
-      const MAX_RETRIES = 2;
-      const BASE_RETRY_DELAY_MS = 100;
-
-      async function uploadWithRetry<T>(
-        batch: T,
-        uploadFn: (batch: T) => Promise<{ error: Error | null }>,
-        retries = MAX_RETRIES
-      ): Promise<{ error: Error | null }> {
-        const result = await uploadFn(batch);
-        if (result.error && retries > 0) {
-          // Exponential backoff: 100ms, 200ms, 400ms...
-          const delay = BASE_RETRY_DELAY_MS * Math.pow(2, MAX_RETRIES - retries);
-          await new Promise((r) => setTimeout(r, delay));
-          return uploadWithRetry(batch, uploadFn, retries - 1);
-        }
-        return result;
-      }
-
-      async function throttledUpload<T>(
-        batches: T[],
-        uploadFn: (batch: T) => Promise<{ error: Error | null }>
+      // Retry helper for RPC calls (transient network errors)
+      async function rpcWithRetry(
+        fn: () => PromiseLike<{ error: unknown }>,
+        maxRetries = 3
       ): Promise<void> {
-        for (let i = 0; i < batches.length; i += SYNC_CONCURRENCY) {
-          const chunk = batches.slice(i, i + SYNC_CONCURRENCY);
-          const results = await Promise.all(
-            chunk.map((batch) => uploadWithRetry(batch, uploadFn))
-          );
-          for (const { error } of results) {
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          try {
+            const { error } = await fn();
             if (error) throw error;
+            return;
+          } catch (e) {
+            const msg = (e as Error).message || String(e);
+            const isTransient = msg.includes("fetch failed") || msg.includes("ECONNRESET") || msg.includes("socket hang up");
+            if (isTransient && attempt < maxRetries) {
+              const delay = 1000 * Math.pow(2, attempt); // 1s, 2s, 4s
+              await new Promise((r) => setTimeout(r, delay));
+              continue;
+            }
+            throw e;
           }
         }
       }
 
-      // Upload sessions with throttling
+      // Upload sessions via RPC bulk function (bypasses per-row RLS)
       batchProfile.sessions = sessionRecords.length;
       const sessionsStart = Date.now();
-      if (sessionBatches.length > 0) {
+      if (sessionRecords.length > 0) {
         try {
-          await throttledUpload(sessionBatches, async (batch) => {
-            const { error } = await supabase.from("sessions").upsert(batch, { onConflict: "id" });
-            return { error };
-          });
+          for (let s = 0; s < sessionRecords.length; s += SESSION_BATCH_SIZE) {
+            const batch = sessionRecords.slice(s, s + SESSION_BATCH_SIZE);
+            await rpcWithRetry(() =>
+              supabase.rpc("bulk_upsert_sessions", { p_sessions: batch })
+            );
+          }
         } catch (e) {
           throw new Error(`[sessions phase] ${(e as Error).message}`);
         }
@@ -552,10 +537,9 @@ export async function pushToCloud(
         try {
           for (let t = 0; t < turnRecords.length; t += TURN_BATCH_SIZE) {
             const batch = turnRecords.slice(t, t + TURN_BATCH_SIZE);
-            const { error } = await supabase.rpc("bulk_upsert_turns", {
-              p_turns: batch,
-            });
-            if (error) throw error;
+            await rpcWithRetry(() =>
+              supabase.rpc("bulk_upsert_turns", { p_turns: batch })
+            );
           }
         } catch (e) {
           throw new Error(`[turns phase] ${(e as Error).message}`);
