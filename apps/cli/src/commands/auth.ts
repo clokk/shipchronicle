@@ -37,6 +37,9 @@ export function registerAuthCommands(program: Command): void {
         console.log("  tuhnr push    # Push local commits to cloud");
         console.log("  tuhnr pull    # Pull commits from cloud");
         console.log("  tuhnr sync    # Bidirectional sync");
+        console.log("\nTip: 'tuhnr start' handles login automatically.");
+        console.log("You can also use 'tuhnr claim' to upgrade an anonymous account.");
+        process.exit(0);
       } catch (error) {
         console.error(`Login failed: ${(error as Error).message}`);
         process.exit(1);
