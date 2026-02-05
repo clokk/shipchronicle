@@ -113,13 +113,31 @@ Published commits track view analytics:
 
 ### Storage Paths
 
-- **Local database**: `~/.cogcommit/global/data.db` — all projects in one SQLite DB
-- **Auth tokens**: `~/.cogcommit/auth.json` — GitHub OAuth tokens
+- **Local database**: `~/.tuhnr/global/data.db` — all projects in one SQLite DB
+- **Project database**: `.tuhnr/data.db` — per-project SQLite DB
+- **Auth tokens**: `~/.tuhnr/auth.json` — OAuth tokens (GitHub or anonymous)
+- **Machine ID**: `~/.tuhnr/machine-id` — unique device identifier
 
 ### Environment Variables
 
-- `COGCOMMIT_SUPABASE_URL` — Supabase project URL
-- `COGCOMMIT_SUPABASE_ANON_KEY` — Supabase anonymous key
+- `TUHNR_SUPABASE_URL` — Supabase project URL (defaults to production)
+- `TUHNR_SUPABASE_ANON_KEY` — Supabase anonymous key (defaults to production)
+
+### Anonymous Auth (Feb 2026)
+
+Users can sync without GitHub OAuth via anonymous auth:
+
+```bash
+tuhnr start    # Creates anonymous account, starts syncing immediately
+tuhnr claim    # Links to GitHub later (preserves user_id, no data migration)
+```
+
+Key functions in `apps/cli/src/sync/auth.ts`:
+- `signInAnonymously()` — Creates anonymous Supabase account
+- `ensureAuthenticated()` — Returns existing user or creates anonymous
+- `claimAccount()` — OAuth flow to link GitHub identity
+
+The `UserProfile` type has `isAnonymous?: boolean` field. Anonymous users get `githubUsername: "anon-{id}"` and empty `githubId`.
 
 ---
 
@@ -128,6 +146,8 @@ Published commits track view analytics:
 | File | Purpose |
 |------|---------|
 | `apps/cli/src/index.ts` | CLI entry point (imports command modules) |
+| `apps/cli/src/commands/start.ts` | Unified start command (init + auth + daemon) |
+| `apps/cli/src/commands/claim.ts` | Link anonymous account to GitHub |
 | `apps/cli/src/commands/` | CLI command modules (parse, sync, studio, etc.) |
 | `apps/cli/src/parser/extractor.ts` | Core parsing state machine |
 | `apps/cli/src/storage/db.ts` | Database wrapper using repository pattern |
@@ -175,6 +195,30 @@ Published commits track view analytics:
 
 ---
 
+## Development
+
+### Rebuilding the CLI
+
+After making changes to CLI source files (`apps/cli/src/**`), rebuild for the global `tuhnr` command:
+
+```bash
+pnpm --filter tuhnr build
+```
+
+This compiles TypeScript and bundles the studio dashboard. Without rebuilding, the global `tuhnr` command will use stale code.
+
+### Supabase Migrations
+
+Migrations live in `supabase/migrations/`. Apply them with:
+
+```bash
+supabase db push
+```
+
+This runs all pending migrations against the remote Supabase database. Requires `supabase` CLI and linked project.
+
+---
+
 ## Design System
 
 ### Colors
@@ -219,6 +263,18 @@ The Supabase tables are named `sessions` and `turns`, NOT `cognitive_sessions` a
 ```
 
 This has caused multiple bugs. Always check `apps/cli/src/sync/push.ts` for canonical table names.
+
+### GOTCHA: JSONB `->>` Returns TEXT in RPC Functions
+
+When extracting values from JSONB with `->>` inside `SECURITY DEFINER` functions, PostgreSQL returns TEXT — not the column type. Always cast explicitly:
+
+```sql
+(t->>'id')::UUID
+(t->>'timestamp')::TIMESTAMPTZ
+(t->>'tool_calls')::JSONB
+```
+
+The Supabase REST API handles these casts transparently, so this only surfaces in raw SQL / RPC functions.
 
 ---
 

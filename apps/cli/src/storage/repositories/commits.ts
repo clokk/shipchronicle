@@ -340,13 +340,15 @@ export class CommitsRepository {
   }
 
   /**
-   * Reset all commits to pending status (for --force push)
+   * Reset synced/error commits to pending status (for --force push)
+   * Skips "filtered" commits to avoid re-filtering thousands of warmup commits each run
    */
   resetAllSyncStatus(): number {
     const result = this.db
       .prepare(`
         UPDATE cognitive_commits
         SET sync_status = 'pending', cloud_id = NULL, cloud_version = 0, last_synced_at = NULL
+        WHERE sync_status IN ('synced', 'error')
       `)
       .run();
 
