@@ -39,3 +39,7 @@ coverage/
 
 # Vercel
 .vercel/
+
+# Strategic docs (keep private)
+VISION.md
+docs/product-direction.md
